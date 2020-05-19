@@ -6,6 +6,8 @@ library(tidyverse)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
+
+AppendixS3_SeasonalityDatabase <- read.csv("AppendixS3_SeasonalityDatabase.csv", header=TRUE)
  
 dfMain <-  as.data.frame(AppendixS3_SeasonalityDatabase)
     
@@ -21,24 +23,24 @@ dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 #Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
 
-localGHCND <- as.data.frame(ghcndStations)
 #print(head(dfWrangled))
 
-#setwd("~/Buckley_Lab/Insect-Phenology-Visualization")
+#setwd("../Insect-Phenology-Forecaster")
 #isaacdf <- readRDS("../finaldf.RDA")
 #save(dfWrangled, file="finaldf.RDA")
-#ddf <- meteo_nearby_stations(dfWrangled,
-#                      lat_colname = "lat",
-#                      lon_colname = "lon",
-#                      station_data = ghcnd_stations(),
-#                      var = "all",
-#                      year_min = 2018,
-#                      year_max = 2020,
-#                      radius = 50,
-#                      limit = 1
-#)
+
 
 # load station data - takes some minutes
+newDF <- as.data.frame(meteo_nearby_stations(dfWrangled,
+                                             lat_colname = "lat",
+                                             lon_colname = "lon",
+                                             station_data = ghcnd_stations(),
+                                             var = "all",
+                                             year_min = 2018,
+                                             year_max = 2020,
+                                             radius = 50,
+                                             limit = 1
+))
 
 # <- ghcnd_stations(refresh = TRUE)
 

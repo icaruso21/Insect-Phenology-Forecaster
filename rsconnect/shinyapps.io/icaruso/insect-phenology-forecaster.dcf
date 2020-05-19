@@ -1,0 +1,10 @@
+name: insect-phenology-forecaster
+title:
+username:
+account: icaruso
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2326716
+bundleId: 3168138
+url: https://icaruso.shinyapps.io/insect-phenology-forecaster/
+when: 1589926524.75813
