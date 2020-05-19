@@ -11,7 +11,7 @@ library(shinyWidgets)
 #library(gluskr)
 #df <- transit_qol_df %>% 
 
-df <- readRDS("../Insect-Phenology-Visualization/final_data.RDA") %>% 
+df <- readRDS("../Insect-Phenology-Forecaster/final_data.RDA") %>% 
     mutate("latitude" = intptlat, "longitude" = intptlon) %>% 
     group_by(year, msa_id) %>% 
     mutate(sum_year_vrh = sum(per_capita_vrh)) %>% 
@@ -42,6 +42,7 @@ dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 ##Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
 
+print(head(dfWrangled))
 #setwd("~/Buckley_Lab/Insect-Phenology-Visualization")
 
 #isaacdf <- readRDS("../finaldf.RDA")
@@ -104,8 +105,7 @@ server <- function(input, output, session){
     
     lat_long_df <- reactive({
         x <- dfWrangled %>% 
-            filter(Species.1 == input$sel_species) 
-        x
+            filter(Species.1 %in% input$sel_species) 
     })
     
     output$res <- renderPrint(input$sel_species)
@@ -114,7 +114,7 @@ server <- function(input, output, session){
         updateMultiInput(
             session = session,
             inputId = "sel_species",
-            selected = unique(dfWrangled$Species.1)
+            selected = unique(lat_long_df()$Species.1)
         )
     })
     
@@ -135,8 +135,7 @@ server <- function(input, output, session){
                              lat = ~lat,
                              popup = paste("<em>",df$Species.1,"</em>", "<br>",
                                            "<b> BDT.C:  </b>", round(df$BDT.C, digits=2), "hours", "<br>",
-                                           "<b> EADDC: </b>", round(df$EADDC, digits=2),
-                                           "%", "<br>", "<b> Mean_BDT.C: </b> $", round(df$Mean_BDT.C, digits=2))) %>% 
+                                           "<b> EADDC: </b>", round(df$EADDC, digits=2))) %>% 
             setView(lng=-98.5795, lat=39.8283, zoom=4) #%>% 
         #mapview(popup = popupGraph(test_plot(), width = 300, height = 300))
         map
