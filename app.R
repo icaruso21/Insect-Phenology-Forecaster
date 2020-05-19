@@ -21,7 +21,8 @@ dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 #Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
 
-print(head(dfWrangled))
+localGHCND <- as.data.frame(ghcndStations)
+#print(head(dfWrangled))
 
 #setwd("~/Buckley_Lab/Insect-Phenology-Visualization")
 #isaacdf <- readRDS("../finaldf.RDA")
@@ -69,7 +70,7 @@ ui <- fluidPage(
                    selected = unique(dfWrangled$Species.1)),
         actionButton("all", "All"),
         actionButton("none", "None"),
-        verbatimTextOutput(outputId = "res")
+        #verbatimTextOutput(outputId = "res")
     ),
     
     mainPanel(
