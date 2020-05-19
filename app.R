@@ -5,28 +5,7 @@ library(tidyr)
 library(tidyverse)
 library(mosaic)
 library(rnoaa)
-library(stringr)
 library(shinyWidgets)
-
-#library(gluskr)
-#df <- transit_qol_df %>% 
-
-df <- readRDS("../Insect-Phenology-Forecaster/final_data.RDA") %>% 
-    mutate("latitude" = intptlat, "longitude" = intptlon) %>% 
-    group_by(year, msa_id) %>% 
-    mutate(sum_year_vrh = sum(per_capita_vrh)) %>% 
-    select(-transit_modes) %>% 
-    unique() %>% 
-    ungroup() %>% 
-    select(msa_id, latitude, longitude, msa_name, sum_year_vrh, per_capita_gdp, percent_commuting_msa, pop_estimate_msa) %>% 
-    group_by(msa_id) %>% 
-    mutate(avg_gdp = mean(per_capita_gdp, na.rm= TRUE),
-           avg_pop = mean(pop_estimate_msa),
-           avg_commuting = mean(percent_commuting_msa),
-           avg_vrh = mean(sum_year_vrh)) %>% 
-    select(msa_id, latitude, longitude, msa_name, avg_vrh, avg_gdp, avg_commuting, avg_pop) %>% 
-    unique() %>% 
-    drop_na()
  
 dfMain <-  as.data.frame(AppendixS3_SeasonalityDatabase)
     
@@ -39,14 +18,13 @@ dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>%
 #remove physiological outliers
 dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 
-##Restrict to dat with lat / lon
+#Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
 
 print(head(dfWrangled))
+
 #setwd("~/Buckley_Lab/Insect-Phenology-Visualization")
-
 #isaacdf <- readRDS("../finaldf.RDA")
-
 #save(dfWrangled, file="finaldf.RDA")
 #ddf <- meteo_nearby_stations(dfWrangled,
 #                      lat_colname = "lat",
@@ -134,7 +112,7 @@ server <- function(input, output, session){
             addCircleMarkers(lng = ~lon,
                              lat = ~lat,
                              popup = paste("<em>",df$Species.1,"</em>", "<br>",
-                                           "<b> BDT.C:  </b>", round(df$BDT.C, digits=2), "hours", "<br>",
+                                           "<b> BDT.C:  </b>", round(df$BDT.C, digits=2), "<br>",
                                            "<b> EADDC: </b>", round(df$EADDC, digits=2))) %>% 
             setView(lng=-98.5795, lat=39.8283, zoom=4) #%>% 
         #mapview(popup = popupGraph(test_plot(), width = 300, height = 300))
