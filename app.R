@@ -7,10 +7,12 @@ library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
 
+#Reading in data for weather stations' locations and Insect Phenology
 AppendixS3_SeasonalityDatabase <- read.csv("AppendixS3_SeasonalityDatabase.csv", header=TRUE)
- 
-dfMain <-  as.data.frame(AppendixS3_SeasonalityDatabase)
-    
+ghcndStationsLocal <- read.csv("ghcnd-stations.csv", header=TRUE)
+
+
+#Selectin certain columns and 
 dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
     select(Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
@@ -28,19 +30,29 @@ dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),
 #setwd("../Insect-Phenology-Forecaster")
 #isaacdf <- readRDS("../finaldf.RDA")
 #save(dfWrangled, file="finaldf.RDA")
-
-
-# load station data - takes some minutes
+# latLonDF <- dfWrangled %>% 
+#     select(Species.1, lat, lon) %>% 
+#     meteo_nearby_stations(
+#                       lat_colname = "lat",
+#                       lon_colname = "lon",
+#                       station_data = ghcndStationsLocal,
+#                       var = "all",
+#                       year_min = 2018,
+#                       year_max = 2020,
+#                       radius = 50,
+#                       limit = 1
+#                       )
+# 
+# # load station data - takes some minutes
 # newDF <- as.data.frame(meteo_nearby_stations(dfWrangled,
 #                                              lat_colname = "lat",
 #                                              lon_colname = "lon",
-#                                              station_data = ghcnd_stations(),
+#                                              station_data = ghcndStationsLocal(),
 #                                              var = "all",
 #                                              year_min = 2018,
 #                                              year_max = 2020,
 #                                              radius = 50,
-#                                              limit = 1
-# ))
+#                                              limit = 1))
 
 # <- ghcnd_stations(refresh = TRUE)
 
