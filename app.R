@@ -30,8 +30,8 @@ dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),
 #setwd("../Insect-Phenology-Forecaster")
 #isaacdf <- readRDS("../finaldf.RDA")
 #save(dfWrangled, file="finaldf.RDA")
-# latLonDF <- dfWrangled %>% 
-#     select(Species.1, lat, lon) %>% 
+# latLonDF <- dfWrangled %>%
+#     select(Species.1, lat, lon) %>%
 #     meteo_nearby_stations(
 #                       lat_colname = "lat",
 #                       lon_colname = "lon",
@@ -80,7 +80,7 @@ ui <- fluidPage(
     sidebarPanel(
         multiInput('sel_species',
                    'Select species: ',
-                   choices = unique(dfWrangled$Species.1),
+                   choices = as.vector(unique(dfWrangled$Species.1)),
                    selected = unique(dfWrangled$Species.1)),
         actionButton("all", "All"),
         actionButton("none", "None"),
