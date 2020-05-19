@@ -31,16 +31,16 @@ dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),
 
 
 # load station data - takes some minutes
-newDF <- as.data.frame(meteo_nearby_stations(dfWrangled,
-                                             lat_colname = "lat",
-                                             lon_colname = "lon",
-                                             station_data = ghcnd_stations(),
-                                             var = "all",
-                                             year_min = 2018,
-                                             year_max = 2020,
-                                             radius = 50,
-                                             limit = 1
-))
+# newDF <- as.data.frame(meteo_nearby_stations(dfWrangled,
+#                                              lat_colname = "lat",
+#                                              lon_colname = "lon",
+#                                              station_data = ghcnd_stations(),
+#                                              var = "all",
+#                                              year_min = 2018,
+#                                              year_max = 2020,
+#                                              radius = 50,
+#                                              limit = 1
+# ))
 
 # <- ghcnd_stations(refresh = TRUE)
 
