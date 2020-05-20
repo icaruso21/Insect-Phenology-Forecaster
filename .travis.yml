@@ -1,0 +1,26 @@
+dist: xenial
+sudo: false
+latex: false
+language: r
+r: release
+warnings_are_errors: false
+cache:
+    packages: true
+    apt_packages:
+    - libgdal-dev
+    - libudunits2-dev
+git:
+    depth: false
+r_packages:
+  -shiny
+  -leaflet
+  -dplyr
+  -tidyr
+  -tidyverse
+  -mosaic
+  -rnoaa
+  -shinyWidgets
+  -taxize
+  -rsconnect
+script:
+    - R -f deploy.R
