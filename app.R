@@ -14,7 +14,7 @@ ghcndStationsLocal <- read.csv("ghcnd-stations.csv", header=TRUE)
 
 #Selectin certain columns and 
 dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
-    select(Species.1, BDT.C, EADDC, lat, lon) %>% 
+    select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
            mean_EADDC = mean(EADDC, na.rm=TRUE))
@@ -75,18 +75,19 @@ dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),
 
 #__________________________
 # This should work. Still have to figure out how to get the data we want from here.
-stations <- ghcnd_stations()
-latLonDF <- select(dfWrangled, c("Species.1", "lat", "lon"))
-colnames(latLonDF) <- c("id", "latitude", "longitude")
+# stations <- ghcnd_stations(refresh = FALSE)
+# latLonDF <- select(dfWrangled, c("Species.1", "lat", "lon"))
+# colnames(latLonDF) <- c("id", "latitude", "longitude")
+# 
+# meteo_nearby_stations(lat_lon_df = latLonDF,
+#                       station_data = stations,
+#                       var = "all",
+#                       year_min = 2000,
+#                       year_max = 2020,
+#                       radius = 50,
+#                       limit = 1
+#                       ) 
 
-meteo_nearby_stations(lat_lon_df = latLonDF,
-                      station_data = stations,
-                      var = "all",
-                      year_min = 2000,
-                      year_max = 2020,
-                      radius = 50,
-                      limit = 1
-                      )
 
 #____________________________
 
@@ -142,9 +143,10 @@ server <- function(input, output, session){
             addTiles() %>%
             addCircleMarkers(lng = ~lon,
                              lat = ~lat,
-                             popup = paste("<em>",df$Species.1,"</em>", "<br>",
-                                           "<b> BDT.C:  </b>", round(df$BDT.C, digits=2), "<br>",
-                                           "<b> EADDC: </b>", round(df$EADDC, digits=2))) %>% 
+                             popup = paste("<em>",df$Species,"</em>", "<br>",
+                                           #sci2comm(df$Species)[[1]][1], "<br>",
+                                           "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
+                                           "<b> BDT.C: </b>", round(df$BDT.C, digits=2))) %>% 
             setView(lng=-98.5795, lat=39.8283, zoom=4) #%>% 
         #mapview(popup = popupGraph(test_plot(), width = 300, height = 300))
         map
