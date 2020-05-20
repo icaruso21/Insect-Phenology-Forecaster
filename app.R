@@ -6,6 +6,7 @@ library(tidyverse)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
+library(taxize)
 
 #Reading in data for weather stations' locations and Insect Phenology
 AppendixS3_SeasonalityDatabase <- read.csv("AppendixS3_SeasonalityDatabase.csv", header=TRUE)
