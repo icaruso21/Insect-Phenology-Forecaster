@@ -13,5 +13,14 @@ git:
     depth: false
 r_packages:
   - rsconnect
+  - shiny
+  - leaflet
+  - dplyr
+  - tidyr
+  - tidyverse
+  - mosaic
+  - rnoaa
+  - shinyWidgets
+  
 script:
     - R -f deploy.R
