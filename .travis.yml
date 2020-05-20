@@ -12,6 +12,6 @@ cache:
 git:
     depth: false
 r_packages:
-  -rsconnect
+  - rsconnect
 script:
     - R -f deploy.R
