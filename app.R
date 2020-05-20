@@ -73,6 +73,22 @@ dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),
 
 #dfGHCND <- as.data.frame(ghcnd_stations)
 
+#__________________________
+# This should work. Still have to figure out how to get the data we want from here.
+stations <- ghcnd_stations()
+latLonDF <- select(dfWrangled, c("Species.1", "lat", "lon"))
+colnames(latLonDF) <- c("id", "latitude", "longitude")
+
+meteo_nearby_stations(lat_lon_df = latLonDF,
+                      station_data = stations,
+                      var = "all",
+                      year_min = 2000,
+                      year_max = 2020,
+                      radius = 50,
+                      limit = 1
+                      )
+
+#____________________________
 
 ui <- fluidPage(
     headerPanel('Insect Phenology Visualization'),
@@ -83,7 +99,7 @@ ui <- fluidPage(
                    choices = as.vector(unique(dfWrangled$Species.1)),
                    selected = unique(dfWrangled$Species.1)),
         actionButton("all", "All"),
-        actionButton("none", "None"),
+        actionButton("none", "None")
         #verbatimTextOutput(outputId = "res")
     ),
     
