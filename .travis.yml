@@ -11,5 +11,7 @@ cache:
     - libudunits2-dev
 git:
     depth: false
+r_packages:
+  -rsconnect
 script:
     - R -f deploy.R
