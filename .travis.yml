@@ -12,15 +12,6 @@ cache:
 git:
     depth: false
 r_packages:
-  -shiny
-  -leaflet
-  -dplyr
-  -tidyr
-  -tidyverse
-  -mosaic
-  -rnoaa
-  -shinyWidgets
-  -taxize
   -rsconnect
 script:
     - R -f deploy.R
