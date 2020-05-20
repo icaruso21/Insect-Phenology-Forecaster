@@ -125,7 +125,7 @@ server <- function(input, output, session){
         updateMultiInput(
             session = session,
             inputId = "sel_species",
-            selected = unique(lat_long_df()$Species.1)
+            selected = unique(dfWrangled$Species.1)
         )
     })
     
