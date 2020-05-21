@@ -6,7 +6,7 @@ library(tidyverse)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
-library(leafpop)
+#library(leafpop)
 #library(taxize)
 
 #Reading in data for weather stations' locations and Insect Phenology

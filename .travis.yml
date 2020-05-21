@@ -21,7 +21,6 @@ r_packages:
   - mosaic
   - rnoaa
   - shinyWidgets
-  - leafpop
 
 script:
     - R -f deploy.R
