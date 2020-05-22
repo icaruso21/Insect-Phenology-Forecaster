@@ -8,42 +8,62 @@ library(rnoaa)
 library(shinyWidgets)
 #library(leafpop)
 #library(taxize)
+#library(testit)
 
-#Reading in data for weather stations' locations and Insect Phenology
-AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
-ghcndStationsLocal <- read.csv("./ghcnd-stations.csv", header=TRUE)
+#---------------Only run this section if you want to update ghcnd-stations.txt-----------
+# 
+# 
+# stationsDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt"),
+#                              widths = c(11, 9, 11, 7, 2, 31, 5, 10),
+#                              header = FALSE, strip.white = TRUE, comment.char = "",
+#                              stringsAsFactors = FALSE)
+# inventoryDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-inventory.txt"),
+#                               widths = c(11, 9, 10, 5, 5, 5),
+#                               header = FALSE, strip.white = TRUE, comment.char = "",
+#                               stringsAsFactors = FALSE)
+# stationColNames <- c("id","latitude", "longitude", "elevation",
+#          "state", "name", "gsn_flag", "wmo_id")
+# inventoryColNames <- c("id","latitude", "longitude",
+#          "element", "first_year", "last_year")
+# 
+# ghcndStationsDaily <- stats::setNames(stationsDailyRaw, stationColNames)
+# ghcndInventoryDaily <- stats::setNames(inventoryDailyRaw, inventoryColNames)
+# 
+# ghcndStationsDailyComplete <- merge(ghcndStationsDaily, ghcndInventoryDaily[, -c(2, 3)], by = "id")
+# 
+# sturdyGHCNDStations <- tibble::as_tibble(ghcndStationsDailyComplete[stats::complete.cases(ghcndStationsDailyComplete), ])
+# 
+# saveRDS(sturdyGHCNDStations, file = "./ghcnd-stations-current.csv")
 
+#--------End Update of GHCND Stations----------
 
-#Selectin certain columns and 
+#Selecting certain columns and creating mean_* columns 
 dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
     select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
            mean_EADDC = mean(EADDC, na.rm=TRUE))
     
-#remove physiological outliers
+#Remove physiological outliers and import seasonality database
+AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
 dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 
 #Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
 dfWrangled$uid <- seq.int(nrow(dfWrangled))
 
-#print(head(dfWrangled))
-
 #setwd("../Insect-Phenology-Forecaster")
-#isaacdf <- readRDS("../finaldf.RDA")
-#save(dfWrangled, file="finaldf.RDA")
 
-#Fill ghcnd stations local with necessary columns 
-stations <- ghcndStationsLocal %>% 
-    mutate(last_year = 2020,
-           first_year = 2020,
-           element = 0) 
-colnames(stations)[1] <- "id"
-colnames(stations)[2] <- "latitude"
-colnames(stations)[3] <- "longitude"
-colnames(stations)[4] <- "elevation"
-colnames(stations)[5] <- "name"
+#Fill ghcnd stations local with necessary columns (not needed anymore i think)
+# stations <- ghcndStationsLocal %>% 
+#     mutate(last_year = 2020,
+#            first_year = 2020,
+#            element = 0) 
+# colnames(stations)[1] <- "id"
+# colnames(stations)[2] <- "latitude"
+# colnames(stations)[3] <- "longitude"
+# colnames(stations)[4] <- "elevation"
+# colnames(stations)[5] <- "name"
 
 #Create necessary datarframe for RNOAA query
 latLonDF <- select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
@@ -52,19 +72,22 @@ colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 #Shorten database for ease 
 latLonDF <- head(latLonDF, 50)
 
-#Turn each row to a dataframe
+#Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
     rowwise %>% 
     do( X = as_data_frame(.) ) %>% 
     ungroup
 
+#read in current local copy of ghcnd stations 
+localGHCNDStations <- readRDS(file = "./ghcnd-stations-current.csv")
+
 #Takes in a dataframe containing c("Species.1", "id", "latitude", "longitude") and returns info about nearest weather station 
 nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
-                                                  station_data = stations,
-                                                  var = "all",
-                                                  year_min = 2000,
+                                                  station_data = localGHCNDStations,
+                                                  var = "TMAX",
+                                                  year_min = 2020,
                                                   year_max = 2020,
-                                                  radius = 50,
+                                                  radius = 500,
                                                   limit = 1
                                                   )}
 
@@ -85,8 +108,7 @@ speciesStationDF <- merge(x = dfWrangled, y = stationLatLonDf, by = "uid")
 speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid) | speciesStationDF$sid==""), ]
 
 
-#____________________________
-
+#-----Here is the user interface (What the user sees)-----
 ui <- fluidPage(
     headerPanel('Insect Phenology Visualization'),
     
@@ -99,7 +121,7 @@ ui <- fluidPage(
         actionButton("none", "None"),
         #actionButton("execute","Execute"),
         verbatimTextOutput(outputId = "pltInf", placeholder = TRUE),
-        plotOutput("predPlot", height = 350),
+        plotOutput("predPlot", height = 300),
     ),
     
     mainPanel(
@@ -108,15 +130,17 @@ ui <- fluidPage(
     
 )
 
+
+#------Here is the server for the shiny app (How the page becomes responsive)--------
 server <- function(input, output, session){
     
-    
+    #Create a reactive dataframe which changes based on the selected species from the multi input tool
     lat_long_df <- reactive({
         x <- speciesStationDF %>% 
             filter(Species.1 %in% input$sel_species) 
     })
     
-
+    #Listen for a button click (all or none) and change selections accordingly
     observeEvent(input$all, {
         updateMultiInput(
             session = session,
@@ -124,7 +148,6 @@ server <- function(input, output, session){
             selected = unique(speciesStationDF$Species.1)
         )
     })
-    
     observeEvent(input$none, {
         updateMultiInput(
             session = session,
@@ -133,6 +156,7 @@ server <- function(input, output, session){
         )
     })
     
+    #-------If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
     observeEvent(input$mymap_marker_click, {
         click<-input$mymap_marker_click
         output$pltInf <- renderPrint(click$id)
@@ -154,6 +178,7 @@ server <- function(input, output, session){
         )
     })
     
+    #-------Create map, add circle markers and popup-------
     output$mymap <- renderLeaflet({
         df <- lat_long_df()
         
@@ -185,4 +210,5 @@ server <- function(input, output, session){
     })
 }
 
+#--------- Here, the shiny app is being executed--------
 shinyApp(ui = ui, server = server)
