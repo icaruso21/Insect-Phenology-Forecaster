@@ -37,15 +37,18 @@ library(shinyWidgets)
 
 #--------End Update of GHCND Stations----------
 
+    
+#Import seasonality database
+AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
+
 #Selecting certain columns and creating mean_* columns 
 dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
     select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
            mean_EADDC = mean(EADDC, na.rm=TRUE))
-    
-#Remove physiological outliers and import seasonality database
-AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
+
+#Remove physiological outliers
 dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 
 #Restrict to dat with lat / lon
