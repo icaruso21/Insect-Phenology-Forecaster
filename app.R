@@ -9,7 +9,7 @@ library(shinyWidgets)
 library(ggplot2)
 library(lubridate)
 #library(leafpop)
-#library(taxize)
+library(taxize)
 #library(testit)
 
 #---------------Only run this section if you want to update ghcnd-stations.txt-----------
@@ -295,10 +295,10 @@ server <- function(input, output, session){
          # wData$tmax[which(wData$tmax< -200)]= NA
          # wData$tmin[which(wData$tmin< -200)]= NA
         
-        if(is_empty(wData$data)){
-            output$pltInf <- renderPrint(paste("No data for: ",
-                                                click$id))
-        }
+        # if(is_empty(wData$data)){
+        #     output$pltInf <- renderPrint(paste("No data for: ",
+        #                                         click$id))
+        # }
         output$predPlot <- renderPlot(
                     dd_plot(tMax, 
                             tMin, 

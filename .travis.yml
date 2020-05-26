@@ -21,6 +21,7 @@ r_packages:
   - mosaic
   - rnoaa
   - shinyWidgets
+  - taxize
 
 script:
     - R -f deploy.R
