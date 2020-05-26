@@ -143,18 +143,6 @@ degree.days.mat=function(Tmin, Tmax, LDT){
     return(dd)
 }
 
-rolling.cum.dd = function(df, EADDC){
-    current.sum <- 0
-    for (c in 1:nrow(df)) {
-        current.sum <- current.sum + df[c, "dd"]
-        df[c, "rcum"] <- current.sum
-        if (current.sum >= EADDC) {
-            df[c, "keep"] <- 1
-            current.sum <- 0
-        }
-    }
-}
-
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
 cumsum_with_reset <- function(x, threshold) {
     cumsum <- 0
@@ -213,7 +201,7 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
     #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
     #     na.omit()
     dfTEMP <- na.omit(dfTEMP)
-    #dfTEMP$dd <- NA
+    dfTEMP$dd <- NA
     for (i in 1:dim(dfTEMP)[1]) {
       dd = degree.days.mat(dfTEMP$TMIN[i], dfTEMP$TMAX[i], BDT)
       dfTEMP$dd[i] <- dd
