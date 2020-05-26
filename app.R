@@ -6,6 +6,8 @@ library(tidyverse)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
+library(ggplot2)
+library(lubridate)
 #library(leafpop)
 #library(taxize)
 #library(testit)
@@ -36,7 +38,6 @@ library(shinyWidgets)
 # saveRDS(sturdyGHCNDStations, file = "./ghcnd-stations-current.csv")
 
 #--------End Update of GHCND Stations----------
-
     
 #Import seasonality database
 AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
@@ -87,7 +88,7 @@ localGHCNDStations <- readRDS(file = "./ghcnd-stations-current.csv")
 #Takes in a dataframe containing c("Species.1", "id", "latitude", "longitude") and returns info about nearest weather station 
 nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
                                                   station_data = localGHCNDStations,
-                                                  var = "TMAX",
+                                                  var = c("TMAX", "TMIN"),
                                                   year_min = 2020,
                                                   year_max = 2020,
                                                   radius = 500,
@@ -96,7 +97,7 @@ nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
 
 #Take every dataframe in pLatLonDF and add a result column containing the RNOAA-station-id of the nearest weather station
 stationLatLonDf <- pLatLonDF %>% 
-    mutate( result = map(X, nearestStat) ) %>% 
+    mutate(result = map(X, nearestStat) ) %>% 
     unnest(cols = c(X, result)) %>% 
     select("Species.1", "id", "result") %>% 
     rename(uid = id) %>% 
@@ -107,11 +108,110 @@ stationLatLonDf <- pLatLonDF %>%
 #Merge weather dataframe with species dataframe
 speciesStationDF <- merge(x = dfWrangled, y = stationLatLonDf, by = "uid")
 
-#Removes observations with no nearby weather stations (<50 miles) as defined by radius argument in nearestStat
+#Removes observations with no nearby weather stations (<500 miles) as defined by radius argument in nearestStat
 speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid) | speciesStationDF$sid==""), ]
 
+#Check have TMIN and TMAX dat (Potentially need in different location later)
+# stations= stations[which(stations$Var=="TMAX" | stations$Var=="TMIN"),]
+# stations= spread(stations,Var, Var)
+# stations= stations[which(stations$TMAX=="TMAX" & stations$TMIN=="TMIN"),]
 
-#-----Here is the user interface (What the user sees)-----
+#DEGREE DAYS CALCULATION 
+#Single sine wave approximation from Baskerville & Emin 1969
+#(see http://www.ipm.ucdavis.edu/WEATHER/ddss_tbl.html)
+#Input:
+#Tdat: 2 column matrix with Tmin followed by Tmax
+#LDT:lower developmental threshold
+#------AM I CONFUSED? I thought Degree Days couldn't be negative... 
+degree.days.mat=function(Tmin, Tmax, LDT){
+    
+    # entirely above LDT
+    if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
+    
+    # intercepted by LDT
+    ## for single sine wave approximation
+    if(Tmin<LDT && Tmax>LDT){
+        alpha=(Tmax-Tmin)/2
+        theta1=asin(((LDT-(Tmax+Tmin))/alpha)*pi/180)
+        dd=1/pi*(((Tmax+Tmin)/2-LDT)*(pi/2-theta1)+alpha*cos(theta1))
+        if(!is.na(dd))if(dd<0){dd=0}
+    } #matches online calculation
+    
+    # entirely below LDT
+    if(Tmax <= LDT){dd = 0}
+    
+    return(dd)
+}
+
+
+#-----Graphing Helper Functions---------
+dd_plot <- function(tMax, tMin, BDT, breaks = NULL, dateformat='%d/%m/%y') {
+    UseMethod("dd_plot")
+}
+
+#' @export
+dd_plot.ncdc_data <- function(tMax, tMin, BDT, breaks = NULL, dateformat='%d/%m/%y') {
+    inTMAX <- list(tMax)
+    inTMIN <- list(tMin) 
+    
+    dfTMAX <- inTMAX[[1]]$data %>% 
+        rename(TMAX = value)
+    dfTMIN <- inTMIN[[1]]$data %>% 
+        rename(TMIN = value)
+    
+    dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
+    dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
+    value = NULL
+    dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
+    #dDaysPrep = select(dfTEMP, 'date', 'station', 'TMIN', 'TMAX')
+    dDays <- dfTEMP %>% 
+        mutate (dd = degree.days.mat(TMIN, TMAX, BDT))
+    # if (!inherits(input[[1]], c('ncdc_data','ncdc_data_comb'))) {
+    #     stop("Input is not of class ncdc_data or ncdc_data_comb", call. = FALSE)
+    # }
+    #zzz <- wData[[1]]$data 
+    #splitDF <- split(df, df$datatype)
+    #splitDF$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(df$date)))
+    ggplot(dDays, aes(date, dd)) +
+        plot_template(df, breaks, dateformat) +
+        ncdc_theme()
+}
+
+#' @export
+dd_plot.default <- function(tMax, tMin, BDT, breaks = NULL, dateformat = '%d/%m/%y') {
+    stop("No method for ", class(list(tMax)[[1]]), call. = FALSE)
+}
+
+plot_template <- function(df, breaks, dateformat) {
+    tt <- list(
+        theme_bw(base_size = 18),
+        geom_line(size = 2),
+        labs(y = "Degree Days", x = "Date")
+    )
+    if (!is.null(breaks)) {
+        c(tt, scale_x_date(date_breaks = breaks, date_labels = dateformat))
+    } else {
+        tt
+    }
+}
+#--------End graphing helper functions--------------------
+
+#------Let's add some common names---------
+#  uniqueSpecies <- speciesStationDF %>% 
+#      select(Species) %>% 
+#      unique() %>% 
+#      mutate(cName = flatten(sci2comm(Species, db = "eol", simplify = TRUE))[[1]])
+# # 
+# uniqueSpecies$cName = c("Spiny brown bug", "Parasitoid wasp", "Acacia psyllid", "Leek moth", "Green stink bug",
+# "Cotton aphid", "Blue alfalfa aphid", "Pea aphid", "Two-spotted ladybug", "Lady beetle",
+# "Variegated ladybug", "Summer fruit tortrix", "Salt marsh mosquito", "Alligator weed flea beetle", "Small tortoiseshell",
+# "Alfalfa blotch leafminer", "Dark sword-grass")
+# 
+# speciesStationDF = inner_join(speciesStationDF, uniqueSpecies, by = "Species")
+#------End common name addition
+
+
+#-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
     headerPanel('Insect Phenology Visualization'),
     
@@ -123,7 +223,7 @@ ui <- fluidPage(
         actionButton("all", "All"),
         actionButton("none", "None"),
         #actionButton("execute","Execute"),
-        verbatimTextOutput(outputId = "pltInf", placeholder = TRUE),
+        verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
         plotOutput("predPlot", height = 300),
     ),
     
@@ -162,22 +262,49 @@ server <- function(input, output, session){
     #-------If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
     observeEvent(input$mymap_marker_click, {
         click<-input$mymap_marker_click
-        output$pltInf <- renderPrint(click$id)
-        wData <- ncdc(datasetid='GHCND',
-                      stationid= paste0('GHCND:', click$id),
-                      datatypeid='tmax',
+        uid <- click$id
+        output$pltInf <- renderPrint(flatten(sci2comm(speciesStationDF$Species[uid], db = "eol", simplify = TRUE))[[1]])
+        tMax <- ncdc(datasetid='GHCND',
+                      stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
+                      datatypeid= "TMAX",
                       startdate = '2020-01-01',
                       enddate = '2020-05-21',
                       limit=500,
                       token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+        tMin <- ncdc(datasetid='GHCND',
+                     stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
+                     datatypeid= "TMIN",
+                     startdate = '2020-01-01',
+                     enddate = '2020-05-21',
+                     limit=500,
+                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+        
+        #Format data
+    #    wData$tmax= as.numeric(wData$tmax)
+    #    wData$tmin= as.numeric(wData$tmin)
+        # wData <- wData$data 
+        # splitWeather <- split(wData, wData$datatype)
+         # wData$tmax[which(wData$tmax==-9999)]= NA
+         # wData$tmax= wData$tmax/10 #correct for tenths of degrees or mm
+         # wData$tmin[which(wData$tmin==-9999)]= NA
+         # wData$tmin= wData$tmin/10 #correct for tenths of degrees or mm
+         # 
+         # #Catch other NA values
+         # wData$tmax[which(wData$tmax>200)]= NA
+         # wData$tmin[which(wData$tmin>200)]= NA
+         # wData$tmax[which(wData$tmax< -200)]= NA
+         # wData$tmin[which(wData$tmin< -200)]= NA
+        
         if(is_empty(wData$data)){
             output$pltInf <- renderPrint(paste("No data for: ",
                                                 click$id))
         }
         output$predPlot <- renderPlot(
-                    ncdc_plot(wData,
-                              breaks="1 month",
-                              dateformat="%m/%d")
+                    dd_plot(tMax, 
+                            tMin, 
+                            speciesStationDF$BDT.C[uid],
+                            breaks="1 month",
+                            dateformat="%m/%d")
         )
     })
     
@@ -191,7 +318,7 @@ server <- function(input, output, session){
             addCircleMarkers(lng = ~lon,
                              lat = ~lat,
                              radius = 1,
-                             layerId = ~sid,
+                             layerId = ~uid,
                              popup = paste("<em>",df$Species,"</em>", "<br>",
                                            #sci2comm(df$Species)[[1]][1], "<br>",
                                            "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
