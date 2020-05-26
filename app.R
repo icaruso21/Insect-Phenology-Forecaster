@@ -263,6 +263,19 @@ plot_template <- function(df, breaks, dateformat) {
 # speciesStationDF = inner_join(speciesStationDF, uniqueSpecies, by = "Species")
 #------End common name addition
 
+#Fetch a common name for a species or return "No available common name." if no results found
+safeSci2Com <- function(df) {
+  com <- sci2comm(df, db = "eol", simplify = TRUE) %>% 
+    flatten()
+  if(identical(com, list())){
+    com <- "No available common name."
+  } else {
+    #fcom <- flatten(com) 
+    com <- com[[1]] 
+  }
+  return(com)
+}
+
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
@@ -316,7 +329,9 @@ server <- function(input, output, session){
     observeEvent(input$mymap_marker_click, {
         click<-input$mymap_marker_click
         uid <- click$id
-        output$pltInf <- renderPrint(flatten(sci2comm(speciesStationDF$Species[uid], db = "eol", simplify = TRUE))[[1]])
+        
+        output$pltInf <- renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
+        
         tMax <- ncdc(datasetid='GHCND',
                       stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
                       datatypeid= "TMAX",
