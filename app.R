@@ -145,12 +145,12 @@ degree.days.mat=function(Tmin, Tmax, LDT){
 
 
 #-----Graphing Helper Functions---------
-dd_plot <- function(tMax, tMin, BDT, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y') {
     UseMethod("dd_plot")
 }
 
 #' @export
-dd_plot.ncdc_data <- function(tMax, tMin, BDT, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y') {
     inTMAX <- list(tMax)
     inTMIN <- list(tMin) 
     
@@ -165,20 +165,23 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, breaks = NULL, dateformat='%d/%m/
     dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
     #dDaysPrep = select(dfTEMP, 'date', 'station', 'TMIN', 'TMAX')
     dDays <- dfTEMP %>% 
-        mutate (dd = degree.days.mat(TMIN, TMAX, BDT))
+        mutate (dd = degree.days.mat(TMIN, TMAX, BDT),
+                cumDD = cumsum(dd))#ifelse(cumsum(dd) > EADDC, cumsum(dd), ))
     # if (!inherits(input[[1]], c('ncdc_data','ncdc_data_comb'))) {
     #     stop("Input is not of class ncdc_data or ncdc_data_comb", call. = FALSE)
     # }
     #zzz <- wData[[1]]$data 
     #splitDF <- split(df, df$datatype)
     #splitDF$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(df$date)))
-    ggplot(dDays, aes(date, dd)) +
+    ggplot(dDays, aes(date, cumDD)) +
         plot_template(df, breaks, dateformat) +
-        ncdc_theme()
+        ncdc_theme() +
+        geom_hline(yintercept = EADDC, linetype = "dashed", color = "red") #+
+        #scale_y_continuous(breaks = sort(c(ggplot_build(plot1)$layout$panel_ranges[[1]]$y.major_source, h)))
 }
 
 #' @export
-dd_plot.default <- function(tMax, tMin, BDT, breaks = NULL, dateformat = '%d/%m/%y') {
+dd_plot.default <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat = '%d/%m/%y') {
     stop("No method for ", class(list(tMax)[[1]]), call. = FALSE)
 }
 
@@ -186,7 +189,7 @@ plot_template <- function(df, breaks, dateformat) {
     tt <- list(
         theme_bw(base_size = 18),
         geom_line(size = 2),
-        labs(y = "Degree Days", x = "Date")
+        labs(y = "Cumulative Degree Days", x = "Date")
     )
     if (!is.null(breaks)) {
         c(tt, scale_x_date(date_breaks = breaks, date_labels = dateformat))
@@ -303,6 +306,7 @@ server <- function(input, output, session){
                     dd_plot(tMax, 
                             tMin, 
                             speciesStationDF$BDT.C[uid],
+                            speciesStationDF$EADDC[uid],
                             breaks="1 month",
                             dateformat="%m/%d")
         )
