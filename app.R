@@ -209,9 +209,15 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
     dfTEMP$TMIN= dfTEMP$TMIN/10 #correct for tenths of degrees or mm
     
     #Calculating degree days in a new column in dDays
-    dDays <- dfTEMP %>% 
-        mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
-        na.omit() 
+    # dDays <- dfTEMP %>% 
+    #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
+    #     na.omit()
+    dfTEMP$dd <- NA
+    for (i in 1:length(dfTEMP)) {
+      dd = degree.days.mat(dfTEMP$TMIN[i], dfTEMP$TMAX[i], BDT)
+      dfTEMP$dd[i] <- dd
+    }
+    dDays = dfTEMP %>% na.omit()
     
     #Adding a csum column which sums degree days and resets after reaching threshold (EADDC)
     dDays$csum <- cumsum_with_reset(dDays$dd, EADDC)
