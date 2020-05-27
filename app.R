@@ -185,7 +185,7 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
   dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
   dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
   
-  #    value = NULL
+  value = NULL
   
   #Joining TMIN and TMAX data into dfTEMP
   dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
