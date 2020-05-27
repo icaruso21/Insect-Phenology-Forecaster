@@ -238,20 +238,6 @@ plot_template <- function(df, breaks, dateformat) {
 }
 #--------End graphing helper functions--------------------
 
-#------Let's add some common names---------
-#  uniqueSpecies <- speciesStationDF %>% 
-#      select(Species) %>% 
-#      unique() %>% 
-#      mutate(cName = flatten(sci2comm(Species, db = "eol", simplify = TRUE))[[1]])
-# # 
-# uniqueSpecies$cName = c("Spiny brown bug", "Parasitoid wasp", "Acacia psyllid", "Leek moth", "Green stink bug",
-# "Cotton aphid", "Blue alfalfa aphid", "Pea aphid", "Two-spotted ladybug", "Lady beetle",
-# "Variegated ladybug", "Summer fruit tortrix", "Salt marsh mosquito", "Alligator weed flea beetle", "Small tortoiseshell",
-# "Alfalfa blotch leafminer", "Dark sword-grass")
-# 
-# speciesStationDF = inner_join(speciesStationDF, uniqueSpecies, by = "Species")
-#------End common name addition
-
 #Fetch a common name for a species or return "No available common name." if no results found
 safeSci2Com <- function(df) {
   com <- sci2comm(df, db = "eol", simplify = TRUE) %>% 
@@ -271,15 +257,23 @@ ui <- fluidPage(
     headerPanel('Insect Phenology Visualization'),
     
     sidebarPanel(
-        multiInput('sel_species',
-                   'Select species: ',
-                   choices = as.vector(unique(speciesStationDF$Species.1)),
-                   selected = unique(speciesStationDF$Species.1)),
-        actionButton("all", "All"),
-        actionButton("none", "None"),
-        #actionButton("execute","Execute"),
-        verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
-        plotOutput("predPlot", height = 300),
+      multiInput('sel_species',
+                 'Select species: ',
+                 choices = as.vector(unique(speciesStationDF$Species.1)),
+                 selected = unique(speciesStationDF$Species.1)),
+      actionButton("all", "All"),
+      actionButton("none", "None"),
+      #actionButton("execute","Execute"),
+      # actionButton("updateDateRange", "View"),
+      hr(),
+      verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
+      dateRangeInput(inputId = "dateRange", 
+                     label = "Change date range: ",
+                     start  = "2020-01-01",
+                     min    = "1900-01-01",
+                     format = "mm/dd/yy",
+                     separator = " - "),
+      plotOutput("predPlot", height = 300)
     ),
     
     mainPanel(
@@ -314,63 +308,52 @@ server <- function(input, output, session){
         )
     })
     
-    #-------If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
-    observeEvent(input$mymap_marker_click, {
-        click<-input$mymap_marker_click
-        uid <- click$id
-        
+    timeRange <- reactive({
+      x <- input$dateRange
+    })
+    
+    #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
+    #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
+    observeEvent({
+      input$mymap_marker_click
+      timeRange()
+    }, {
+      click<-input$mymap_marker_click
+      uid <- click$id
+      if(!is.null(uid)){
+        time <- timeRange()
         output$pltInf <- renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
-        
+
         tMax <- ncdc(datasetid='GHCND',
-                      stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
-                      datatypeid= "TMAX",
-                      startdate = '2020-01-01',
-                      enddate = '2020-05-21',
-                      limit=500,
-                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+                     stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
+                     datatypeid= "TMAX",
+                     startdate = time[1],
+                     enddate = time[2],
+                     limit=500,
+                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
         tMin <- ncdc(datasetid='GHCND',
                      stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
                      datatypeid= "TMIN",
-                     startdate = '2020-01-01',
-                     enddate = '2020-05-21',
+                     startdate = time[1],
+                     enddate = time[2],
                      limit=500,
                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
         
-        
-        #Format data
-    #    wData$tmax= as.numeric(wData$tmax)
-    #    wData$tmin= as.numeric(wData$tmin)
-        # wData <- wData$data 
-        # splitWeather <- split(wData, wData$datatype)
-         # wData$tmax[which(wData$tmax==-9999)]= NA
-         # wData$tmax= wData$tmax/10 #correct for tenths of degrees or mm
-         # wData$tmin[which(wData$tmin==-9999)]= NA
-         # wData$tmin= wData$tmin/10 #correct for tenths of degrees or mm
-         # 
-         # #Catch other NA values
-         # wData$tmax[which(wData$tmax>200)]= NA
-         # wData$tmin[which(wData$tmin>200)]= NA
-         # wData$tmax[which(wData$tmax< -200)]= NA
-         # wData$tmin[which(wData$tmin< -200)]= NA
-        
-        # if(is_empty(wData$data)){
-        #     output$pltInf <- renderPrint(paste("No data for: ",
-        #                                         click$id))
-        # }
         output$predPlot <- renderPlot(
-                    dd_plot(tMax, 
-                            tMin, 
-                            speciesStationDF$BDT.C[uid],
-                            speciesStationDF$EADDC[uid],
-                            breaks="1 month",
-                            dateformat="%m/%d")
-        )
+          dd_plot(tMax, 
+                  tMin, 
+                  speciesStationDF$BDT.C[uid],
+                  speciesStationDF$EADDC[uid],
+                  breaks="1 month",
+                  dateformat="%m/%d")
+        )} else {
+          output$pltInf <- renderPrint("Select an observation from the map.")
+        }
     })
     
     #-------Create map, add circle markers and popup-------
     output$mymap <- renderLeaflet({
         df <- lat_long_df()
-        
         map <- leaflet(data = df) %>%
             addProviderTiles(providers$OpenTopoMap) %>% 
             #addTiles() %>%
