@@ -265,7 +265,7 @@ ui <- fluidPage(
       actionButton("none", "None"),
       #actionButton("execute","Execute"),
       # actionButton("updateDateRange", "View"),
-      hr(),
+    #  hr(),
       verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
       dateRangeInput(inputId = "dateRange", 
                      label = "Change date range: ",
