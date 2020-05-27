@@ -175,48 +175,49 @@ dd_plot <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y'
 
 
 dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y') {
-    #Pulling data from tMax RNOAA object into dfTMAX
-    dfTMAX <- list(tMax)[[1]]$data %>% 
-        rename(TMAX = value)
-    dfTMIN <- list(tMin)[[1]]$data %>% 
-        rename(TMIN = value)
-    
-    #Cleaning up dates 
-    dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
-    dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
-    
-#    value = NULL
-    
-    #Joining TMIN and TMAX data into dfTEMP
-    dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
-    
-    #Matching units and removing errors
-    dfTEMP$TMAX[which(dfTEMP$TMAX==-9999)]= NA
-    dfTEMP$TMAX= dfTEMP$TMAX/10 #correct for tenths of degrees or mm
-    dfTEMP$TMIN[which(dfTEMP$TMIN==-9999)]= NA
-    dfTEMP$TMIN= dfTEMP$TMIN/10 #correct for tenths of degrees or mm
-    
-    #Calculating degree days in a new column in dDays
-    # dDays <- dfTEMP %>% 
-    #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
-    #     na.omit()
-    dfTEMP <- na.omit(dfTEMP)
-    dfTEMP$dd <- NA
-    for (i in 1:dim(dfTEMP)[1]) {
-      dd = degree.days.mat(dfTEMP$TMIN[i], dfTEMP$TMAX[i], BDT)
-      dfTEMP$dd[i] <- dd
-    }
-   # dDays = dfTEMP %>% na.omit()
-    dDays <- dfTEMP
-    #Adding a csum column which sums degree days and resets after reaching threshold (EADDC)
-    dDays$csum <- cumsum_with_reset(dDays$dd, EADDC)
-    
-    #Plot csum vs date
-    ggplot(dDays, aes(date, csum)) +
-        plot_template(df, breaks, dateformat) +
-        ncdc_theme() +
-        geom_hline(yintercept = EADDC, linetype = "dashed", color = "red") #+
-        #scale_y_continuous(breaks = sort(c(ggplot_build(plot1)$layout$panel_ranges[[1]]$y.major_source, h)))
+  #Pulling data from tMax RNOAA object into dfTMAX
+  dfTMAX <- list(tMax)[[1]]$data %>% 
+    rename(TMAX = value)
+  dfTMIN <- list(tMin)[[1]]$data %>% 
+    rename(TMIN = value)
+  
+  #Cleaning up dates 
+  dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
+  dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
+  
+  #    value = NULL
+  
+  #Joining TMIN and TMAX data into dfTEMP
+  dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
+  
+  #Matching units and removing errors
+  dfTEMP$TMAX[which(dfTEMP$TMAX==-9999)]= NA
+  dfTEMP$TMAX= dfTEMP$TMAX/10 #correct for tenths of degrees or mm
+  dfTEMP$TMIN[which(dfTEMP$TMIN==-9999)]= NA
+  dfTEMP$TMIN= dfTEMP$TMIN/10 #correct for tenths of degrees or mm
+  
+  #Calculating degree days in a new column in dDays
+  # dDays <- dfTEMP %>% 
+  #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
+  #     na.omit()
+  dfTEMP <- na.omit(dfTEMP)
+  dfTEMP$dd <- NA
+  for (i in 1:dim(dfTEMP)[1]) {
+    dd = degree.days.mat(dfTEMP$TMIN[i], dfTEMP$TMAX[i], BDT)
+    dfTEMP$dd[i] <- dd
+  }
+  # dDays = dfTEMP %>% na.omit()
+  dDays <- dfTEMP
+  #Adding a csum column which sums degree days and resets after reaching threshold (EADDC)
+  dDays$csum <- cumsum_with_reset(dDays$dd, EADDC)
+  
+  #Plot csum vs date
+  ggplot(dDays, aes(date, csum)) +
+    plot_template(df, breaks, dateformat) +
+    ncdc_theme() +
+    geom_hline(aes(yintercept = EADDC), linetype = "dashed", color = "green") #+
+   # geom_text(aes( 0, EADDC, label = EADDC, vjust = -1), size = 3)
+  #scale_y_continuous(breaks = sort(c(ggplot_build(plot1)$layout$panel_ranges[[1]]$y.major_source, h)))
 }
 
 
