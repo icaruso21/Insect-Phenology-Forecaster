@@ -74,7 +74,7 @@ latLonDF <- select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 
 #Shorten database for ease 
-#latLonDF <- head(latLonDF, 50)
+latLonDF <- head(latLonDF, 500)
 
 #Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
@@ -89,7 +89,7 @@ localGHCNDStations <- readRDS(file = "./ghcnd-stations-current.csv")
 nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
                                                   station_data = localGHCNDStations,
                                                   var = c("TMAX", "TMIN"),
-                                                  year_min = 2020,
+                                                  year_min = 2000,
                                                   year_max = 2020,
                                                   radius = 500,
                                                   limit = 1
