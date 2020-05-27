@@ -185,7 +185,7 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
   dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
   dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
   
-  value = NULL
+  #value = NULL
   
   #Joining TMIN and TMAX data into dfTEMP
   dfTEMP <- full_join(dfTMAX, dfTMIN[ , c("date", "TMIN")], by = 'date')
@@ -340,14 +340,16 @@ server <- function(input, output, session){
                      limit=500,
                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
         
-        output$predPlot <- renderPlot(
+        if(!is_empty(list(tMax)[[1]]$data) && !is_empty(list(tMin)[[1]]$data))
+        {output$predPlot <- renderPlot(
           dd_plot(tMax, 
                   tMin, 
                   speciesStationDF$BDT.C[uid],
                   speciesStationDF$EADDC[uid],
                   breaks="1 month",
-                  dateformat="%m/%d")
-        )} else {
+                  dateformat="%m/%d"))}
+        else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
+        } else {
           output$pltInf <- renderPrint("Select an observation from the map.")
         }
     })
