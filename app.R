@@ -74,7 +74,7 @@ latLonDF <- select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 
 #Shorten database for ease 
-latLonDF <- head(latLonDF, 1000)
+#latLonDF <- head(latLonDF, 1000)
 
 #Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
