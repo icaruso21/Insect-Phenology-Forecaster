@@ -2,7 +2,6 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 library(tidyr)
-library(tidyverse)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
@@ -10,6 +9,14 @@ library(ggplot2)
 library(lubridate)
 #library(leafpop)
 library(taxize)
+# library(AOI)
+# library(climateR)
+# library(rgeos)
+# library(sf)
+# library(raster)
+# library(rasterVis)
+# library(sp)
+library(tidyverse)
 #library(testit)
 
 #---------------Only run this section if you want to update ghcnd-stations.txt-----------
@@ -74,7 +81,7 @@ latLonDF <- select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 
 #Shorten database for ease 
-#latLonDF <- head(latLonDF, 1000)
+latLonDF <- head(latLonDF, 50)
 
 #Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
@@ -169,12 +176,12 @@ cumsum_with_reset <- function(x, threshold) {
 }
 
 #-----Graphing Helper Functions---------
-dd_plot <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
     UseMethod("dd_plot")
 }
 
 
-dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
   #Pulling data from tMax RNOAA object into dfTMAX
   dfTMAX <- list(tMax)[[1]]$data %>% 
     rename(TMAX = value)
@@ -195,11 +202,27 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
   dfTEMP$TMAX= dfTEMP$TMAX/10 #correct for tenths of degrees or mm
   dfTEMP$TMIN[which(dfTEMP$TMIN==-9999)]= NA
   dfTEMP$TMIN= dfTEMP$TMIN/10 #correct for tenths of degrees or mm
-  
+  #Catch other NA values
+  #COmment back in ============================
+  dfTEMP$TMAX[which(dfTEMP$TMAX > 200)] = NA
+  dfTEMP$TMIN[which(dfTEMP$TMIN > 200)] = NA
+  dfTEMP$TMAX[which(dfTEMP$TMAX < -200)] = NA
+  dfTEMP$TMIN[which(dfTEMP$TMIN < -200)] = NA
+  #===============================================
   #Calculating degree days in a new column in dDays
   # dDays <- dfTEMP %>% 
   #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
-  #     na.omit()
+  
+  #split year 
+#  date= as.Date(dfTEMP$date, "%Y-%m-$d")
+#  dfTEMP$year=as.numeric(format(date, "%Y"))
+  
+  ## FIND YEARS WITH NEARLY COMPLETE DATA
+   # dat.agg= aggregate(dfTEMP, list(dfTEMP$year),FUN=count)  ### PROBLEM IF RASTER LOADED
+   # years= dat.agg$Group.1[which(dat.agg$TMAX>50)]
+   # dfTEMP= dfTEMP[which(dfTEMP$year %in% years),]
+  
+    #na.omit()
   dfTEMP <- na.omit(dfTEMP)
   dfTEMP$dd <- NA
   for (i in 1:dim(dfTEMP)[1]) {
@@ -215,13 +238,13 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat=
   ggplot(dDays, aes(date, csum)) +
     plot_template(df, breaks, dateformat) +
     ncdc_theme() +
-    geom_hline(aes(yintercept = EADDC), linetype = "dashed", color = "green") #+
-   # geom_text(aes( 0, EADDC, label = EADDC, vjust = -1), size = 3)
+    geom_hline(aes(yintercept = EADDC), linetype = "dashed", color = "green") +
+    geom_text(aes( startTime, EADDC, label = "EADDC", vjust = +1.5, hjust = -0.1), size = 3)
   #scale_y_continuous(breaks = sort(c(ggplot_build(plot1)$layout$panel_ranges[[1]]$y.major_source, h)))
 }
 
 
-dd_plot.default <- function(tMax, tMin, BDT, EADDC, breaks = NULL, dateformat = '%d/%m/%y') {
+dd_plot.default <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
     stop("No method for ", class(list(tMax)[[1]]), call. = FALSE)
 }
 
@@ -252,6 +275,41 @@ safeSci2Com <- function(df) {
   return(com)
 }
 
+# 
+# AOI <- aoi_get(country = "usa") %>% 
+#   aoi_map(returnMap = TRUE)
+# 
+# AOI <- aoi_get(state = "conus") %>% 
+#   aoi_map(returnMap = TRUE) 
+# 
+# AOI <- aoi_get(state = "conus", union = TRUE) %>% 
+#   aoi_map(returnMap = TRUE) 
+# 
+# aoi_get(state = 'south') %>% 
+#   st_union() %>% 
+#   aoi_map(returnMap = TRUE)
+# 
+# aoi_get(state = 'conus', union = TRUE) %>% 
+#   aoi_map(returnMap = TRUE)
+# 
+# aoi_get(state = c('CA', 'OR', 'WA'), union = TRUE) %>% 
+#   aoi_map(returnMap = TRUE)
+# 
+# system.time({
+#   g = aoi_get(state = "conus") %>%  getGridMET(param = 'tmax', startDate = "2017-06-29")
+# })
+# 
+# raster::plot(g$tmax, col = viridis::viridis(100), axes = F, box= F)
+# title(main = "Solar Radiation 2017-06-29\n4km Resolution")
+# sp::plot(g$AOI, add = TRUE)
+# # 
+# AOI = aoi_get(state = "conus")
+# 
+# p = getGridMET(AOI, param = c('tmax','tmin'), startDate = "2018-8-15")
+# 
+# r = raster::stack(p$tmax, p$tmin)
+# names(r) = c('tmax', 'tmin')
+# rasterVis::levelplot(r)
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
@@ -346,6 +404,7 @@ server <- function(input, output, session){
                   tMin, 
                   speciesStationDF$BDT.C[uid],
                   speciesStationDF$EADDC[uid],
+                  time[1],
                   breaks="1 month",
                   dateformat="%m/%d"))}
         else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
