@@ -99,24 +99,27 @@ nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
                                                   year_min = 2000,
                                                   year_max = 2020,
                                                   radius = 500,
-                                                  limit = 1
+                                                  limit = 2
                                                   )}
 
 #Take every dataframe in pLatLonDF and add a result column containing the RNOAA-station-id of the nearest weather station
 stationLatLonDf <- pLatLonDF %>% 
-    mutate(result = map(X, nearestStat) ) %>% 
-    unnest(cols = c(X, result)) %>% 
+    mutate(result = map(X, nearestStat)) %>% 
+    unnest(cols = c(X, result)) %>%
     select("Species.1", "id", "result") %>% 
     rename(uid = id) %>% 
     unnest(cols = c(result)) %>% 
-    rename (sid = id) %>% 
+    rename(sid = id) %>% 
     select("uid", "sid")
-    
+stationLatLonDf$rank <- rep(c(1,2), length.out = 100)
+stationLatLonDf <- spread(stationLatLonDf, rank, sid)
+colnames(stationLatLonDf) <- c("uid", "sid1", "sid2")
+
 #Merge weather dataframe with species dataframe
 speciesStationDF <- merge(x = dfWrangled, y = stationLatLonDf, by = "uid")
 
 #Removes observations with no nearby weather stations (<500 miles) as defined by radius argument in nearestStat
-speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid) | speciesStationDF$sid==""), ]
+speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) | speciesStationDF$sid1==""), ]
 
 #Check have TMIN and TMAX dat (Potentially need in different location later)
 # stations= stations[which(stations$Var=="TMAX" | stations$Var=="TMIN"),]
@@ -176,22 +179,28 @@ cumsum_with_reset <- function(x, threshold) {
 }
 
 #-----Graphing Helper Functions---------
-dd_plot <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
     UseMethod("dd_plot")
 }
 
 
-dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
-  #Pulling data from tMax RNOAA object into dfTMAX
-  dfTMAX <- list(tMax)[[1]]$data %>% 
-    rename(TMAX = value)
-  dfTMIN <- list(tMin)[[1]]$data %>% 
-    rename(TMIN = value)
+dd_plot.tbl_df <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
   
+  #Making a new dataframe that has all of tMax1 and tMax2 for missing dates
+  if(!is.na(tMax1) && !is.na(tMax2) && !is.na(tMin1) && !is.na(tMin2)) {
+    dfTMAX <- rbind(tMax1, tMax2[!tMax2$date %in% tMax1$date,])
+    dfTMIN <- rbind(tMin1, tMin2[!tMin2$date %in% tMin1$date,])
+  } else {
+    dfTMAX <- rbind(tMax1, tMax2)
+    dfTMIN <- rbind(tMin1, tMin2)
+  }
   #Cleaning up dates 
   dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
   dfTMIN$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMIN$date)))
   
+  #Order dataframe by date
+  dfTMAX <- dfTMAX[order(as.Date(dfTMAX$date, format = "%y%m%d")),]
+  dfTMIN <- dfTMIN[order(as.Date(dfTMIN$date, format = "%y%m%d")),]
   #value = NULL
   
   #Joining TMIN and TMAX data into dfTEMP
@@ -203,7 +212,7 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, 
   dfTEMP$TMIN[which(dfTEMP$TMIN==-9999)]= NA
   dfTEMP$TMIN= dfTEMP$TMIN/10 #correct for tenths of degrees or mm
   #Catch other NA values
-  #COmment back in ============================
+  #Comment back in ============================
   dfTEMP$TMAX[which(dfTEMP$TMAX > 200)] = NA
   dfTEMP$TMIN[which(dfTEMP$TMIN > 200)] = NA
   dfTEMP$TMAX[which(dfTEMP$TMAX < -200)] = NA
@@ -221,11 +230,11 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, 
    # dat.agg= aggregate(dfTEMP, list(dfTEMP$year),FUN=count)  ### PROBLEM IF RASTER LOADED
    # years= dat.agg$Group.1[which(dat.agg$TMAX>50)]
    # dfTEMP= dfTEMP[which(dfTEMP$year %in% years),]
-  
+
     #na.omit()
   dfTEMP <- na.omit(dfTEMP)
   dfTEMP$dd <- NA
-  for (i in 1:dim(dfTEMP)[1]) {
+  for (i in 1:nrow(dfTEMP)) {
     dd = degree.days.mat(dfTEMP$TMIN[i], dfTEMP$TMAX[i], BDT)
     dfTEMP$dd[i] <- dd
   }
@@ -244,8 +253,8 @@ dd_plot.ncdc_data <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, 
 }
 
 
-dd_plot.default <- function(tMax, tMin, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
-    stop("No method for ", class(list(tMax)[[1]]), call. = FALSE)
+dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
+    stop("No method for ", class(list(tMax1)[[1]]), call. = FALSE)
 }
 
 plot_template <- function(df, breaks, dateformat) {
@@ -383,25 +392,62 @@ server <- function(input, output, session){
         time <- timeRange()
         output$pltInf <- renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
 
-        tMax <- ncdc(datasetid='GHCND',
-                     stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
+        tMax1 <- ncdc(datasetid='GHCND',
+                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
                      datatypeid= "TMAX",
                      startdate = time[1],
                      enddate = time[2],
                      limit=500,
                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-        tMin <- ncdc(datasetid='GHCND',
-                     stationid= paste0('GHCND:', speciesStationDF$sid[uid]),
+        
+        tMax2 <- ncdc(datasetid='GHCND',
+                      stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
+                      datatypeid= "TMAX",
+                      startdate = time[1],
+                      enddate = time[2],
+                      limit=500,
+                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+        
+        ifelse(nrow(tMax1$data)==0,
+               tMax1 <- NA,
+               tMax1 <- tMax1$data %>% select(date, value) %>% rename(TMAX = value)
+        )
+        ifelse(nrow(tMax2$data)==0,
+               tMax2 <- NA,
+               tMax2 <- tMax2$data %>% select(date, value) %>% rename(TMAX = value)
+        )
+        
+        tMin1 <- ncdc(datasetid='GHCND',
+                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
                      datatypeid= "TMIN",
                      startdate = time[1],
                      enddate = time[2],
                      limit=500,
                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
         
-        if(!is_empty(list(tMax)[[1]]$data) && !is_empty(list(tMin)[[1]]$data))
+        tMin2 <- ncdc(datasetid='GHCND',
+                      stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
+                      datatypeid= "TMIN",
+                      startdate = time[1],
+                      enddate = time[2],
+                      limit=500,
+                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+        
+        ifelse(nrow(tMin1$data)==0,
+               tMin1 <- NA,
+               tMin1 <- tMin1$data %>% select(date, value) %>% rename(TMIN = value)
+        )
+        ifelse(nrow(tMin2$data)==0,
+               tMin2 <- NA,
+               tMin2 <- tMin2$data %>% select(date, value) %>% rename(TMIN = value)
+        )
+        
+        if(!is.na(tMax1) && !is.na(tMax2))
         {output$predPlot <- renderPlot(
-          dd_plot(tMax, 
-                  tMin, 
+          dd_plot(tMax1, 
+                  tMax2, 
+                  tMin1, 
+                  tMin2,
                   speciesStationDF$BDT.C[uid],
                   speciesStationDF$EADDC[uid],
                   time[1],
