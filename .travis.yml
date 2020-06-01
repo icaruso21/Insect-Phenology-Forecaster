@@ -22,6 +22,15 @@ r_packages:
   - rnoaa
   - shinyWidgets
   - taxize
+  - AOI
+  - climateR
+  - rgeos
+  - sf
+  - raster
+  - rasterVis
+  - sp
+  - tidyverse
+  - rgdal
 
 script:
     - R -f deploy.R
