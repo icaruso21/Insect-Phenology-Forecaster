@@ -9,14 +9,15 @@ library(ggplot2)
 library(lubridate)
 #library(leafpop)
 library(taxize)
-# library(AOI)
-# library(climateR)
-# library(rgeos)
-# library(sf)
-# library(raster)
-# library(rasterVis)
-# library(sp)
+library(AOI)
+library(climateR)
+library(rgeos)
+library(sf)
+library(raster)
+library(rasterVis)
+library(sp)
 library(tidyverse)
+library(rgdal)
 #library(testit)
 
 #---------------Only run this section if you want to update ghcnd-stations.txt-----------
@@ -51,7 +52,7 @@ AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv
 
 #Selecting certain columns and creating mean_* columns 
 dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
-    select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
+    dplyr::select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
            mean_EADDC = mean(EADDC, na.rm=TRUE))
@@ -77,7 +78,7 @@ dfWrangled$uid <- seq.int(nrow(dfWrangled))
 # colnames(stations)[5] <- "name"
 
 #Create necessary datarframe for RNOAA query
-latLonDF <- select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
+latLonDF <- dplyr::select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 
 #Shorten database for ease 
@@ -106,11 +107,11 @@ nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
 stationLatLonDf <- pLatLonDF %>% 
     mutate(result = map(X, nearestStat)) %>% 
     unnest(cols = c(X, result)) %>%
-    select("Species.1", "id", "result") %>% 
+    dplyr::select("Species.1", "id", "result") %>% 
     rename(uid = id) %>% 
     unnest(cols = c(result)) %>% 
     rename(sid = id) %>% 
-    select("uid", "sid")
+    dplyr::select("uid", "sid")
 stationLatLonDf$rank <- rep(c(1,2), length.out = 100)
 stationLatLonDf <- spread(stationLatLonDf, rank, sid)
 colnames(stationLatLonDf) <- c("uid", "sid1", "sid2")
@@ -119,7 +120,7 @@ colnames(stationLatLonDf) <- c("uid", "sid1", "sid2")
 speciesStationDF <- merge(x = dfWrangled, y = stationLatLonDf, by = "uid")
 
 #Removes observations with no nearby weather stations (<500 miles) as defined by radius argument in nearestStat
-speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) | speciesStationDF$sid1==""), ]
+speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesStationDF$sid1==""), ]
 
 #Check have TMIN and TMAX dat (Potentially need in different location later)
 # stations= stations[which(stations$Var=="TMAX" | stations$Var=="TMIN"),]
@@ -152,7 +153,31 @@ degree.days.mat=function(Tmin, Tmax, LDT){
     
     return(dd)
 }
-
+#Slightly modified version for use with raster calc function
+degree.days.raster=function(x){
+  LDT = 15
+  Tmin = x[1]
+  Tmax = x[2]
+  
+  #Tmin = cellVector[1]
+  #Tmax = cellVector[2]
+  # entirely above LDT
+  if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
+  
+  # intercepted by LDT
+  ## for single sine wave approximation
+  if(Tmin<LDT && Tmax>LDT){
+    alpha=(Tmax-Tmin)/2
+    theta1=asin(((LDT-(Tmax+Tmin))/alpha)*pi/180)
+    dd=1/pi*(((Tmax+Tmin)/2-LDT)*(pi/2-theta1)+alpha*cos(theta1))
+    if(!is.na(dd))if(dd<0){dd=0}
+  } #matches online calculation
+  
+  # entirely below LDT
+  if(Tmax <= LDT){dd = 0}
+  
+  return(dd)
+}
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
 cumsum_with_reset <- function(x, threshold) {
     cumsum <- 0
@@ -305,20 +330,14 @@ safeSci2Com <- function(df) {
 #   aoi_map(returnMap = TRUE)
 # 
 # system.time({
-#   g = aoi_get(state = "conus") %>%  getGridMET(param = 'tmax', startDate = "2017-06-29")
+  # g = aoi_get(state = "conus") %>%  getGridMET(param = 'tmax', startDate = "2017-06-29")
 # })
 # 
 # raster::plot(g$tmax, col = viridis::viridis(100), axes = F, box= F)
 # title(main = "Solar Radiation 2017-06-29\n4km Resolution")
 # sp::plot(g$AOI, add = TRUE)
 # # 
-# AOI = aoi_get(state = "conus")
-# 
-# p = getGridMET(AOI, param = c('tmax','tmin'), startDate = "2018-8-15")
-# 
-# r = raster::stack(p$tmax, p$tmin)
-# names(r) = c('tmax', 'tmin')
-# rasterVis::levelplot(r)
+
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
@@ -390,7 +409,7 @@ server <- function(input, output, session){
       uid <- click$id
       if(!is.null(uid)){
         time <- timeRange()
-        output$pltInf <- renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
+        output$pltInf <- renderPrint("Temporarily down.")#renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
 
         tMax1 <- ncdc(datasetid='GHCND',
                      stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
@@ -410,20 +429,20 @@ server <- function(input, output, session){
         
         ifelse(nrow(tMax1$data)==0,
                tMax1 <- NA,
-               tMax1 <- tMax1$data %>% select(date, value) %>% rename(TMAX = value)
+               tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
         )
         ifelse(nrow(tMax2$data)==0,
                tMax2 <- NA,
-               tMax2 <- tMax2$data %>% select(date, value) %>% rename(TMAX = value)
+               tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
         )
         
         tMin1 <- ncdc(datasetid='GHCND',
-                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
-                     datatypeid= "TMIN",
-                     startdate = time[1],
-                     enddate = time[2],
-                     limit=500,
-                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+                      stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
+                      datatypeid= "TMIN",
+                      startdate = time[1],
+                      enddate = time[2],
+                      limit=500,
+                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
         
         tMin2 <- ncdc(datasetid='GHCND',
                       stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
@@ -435,11 +454,11 @@ server <- function(input, output, session){
         
         ifelse(nrow(tMin1$data)==0,
                tMin1 <- NA,
-               tMin1 <- tMin1$data %>% select(date, value) %>% rename(TMIN = value)
+               tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
         )
         ifelse(nrow(tMin2$data)==0,
                tMin2 <- NA,
-               tMin2 <- tMin2$data %>% select(date, value) %>% rename(TMIN = value)
+               tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
         )
         
         if(!is.na(tMax1) && !is.na(tMax2))
@@ -454,39 +473,61 @@ server <- function(input, output, session){
                   breaks="1 month",
                   dateformat="%m/%d"))}
         else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
-        } else {
-          output$pltInf <- renderPrint("Select an observation from the map.")
-        }
+      } else {
+        output$pltInf <- renderPrint("Select an observation from the map.")
+      }
     })
     
     #-------Create map, add circle markers and popup-------
+    
+    AOI = aoi_get(state = "conus")
+
+    p = getGridMET(AOI, param = c('tmax','tmin'), startDate = Sys.Date()-2)
+    #q = getGridMET(AOI, param = c('tmin'), startDate = "2018-8-15")
+
+    r = raster::stack(p$tmax, p$tmin)
+    names(r) = c('tmax', 'tmin')
+    #comp = calc(r, degree.days.raster)
+    #raster::plot(r$tmax)
+    pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(r),
+                        na.color = "transparent")
+    # a = raster(r)
+    # rasterVis::levelplot(r)
     output$mymap <- renderLeaflet({
-        df <- lat_long_df()
-        map <- leaflet(data = df) %>%
-            addProviderTiles(providers$OpenTopoMap) %>% 
-            #addTiles() %>%
-            addCircleMarkers(lng = ~lon,
-                             lat = ~lat,
-                             radius = 1,
-                             layerId = ~uid,
-                             popup = paste("<em>",df$Species,"</em>", "<br>",
-                                           #sci2comm(df$Species)[[1]][1], "<br>",
-                                           "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
-                                           "<b> BDT.C: </b>", round(df$BDT.C, digits=2), "<br>",
-                                           "<b> SID: </b>", df$sid )) %>% #,
-                                           # popupGraph(ncdc_plot(ncdc(datasetid='GHCND',
-                                           #                           stationid=paste0('GHCND:', df$sid),
-                                           #                           datatypeid='tmax',
-                                           #                           startdate = '2020-01-01',
-                                           #                           enddate = '2020-05-21',
-                                           #                           limit=500,
-                                           #                           token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ"),
-                                           #                      breaks="1 month",
-                                           #                      dateformat="%m/%d"),
-                                           #            width = 300,
-                                           #            height = 400))) %>% 
-            setView(lng=-98.5795, lat=39.8283, zoom=4) #%>% 
-        map
+      df <- lat_long_df()
+      map <- leaflet(data = df) %>%
+        addProviderTiles(providers$OpenTopoMap) %>% 
+        addLayersControl(baseGroups = c("Obs", "tmax", "tmin")) %>% #, 
+                         #options = layersControlOptions(collapsed = F)) %>% 
+        #addTiles() %>%
+        addRasterImage(r$tmax, colors = pal, group = "tmax") %>%
+        addRasterImage(r$tmin, colors = pal, group = "tmin") %>%
+        addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Max Daily Temp") %>% 
+        addLegend(pal = pal, values = values(r$tmin), group = "tmin", title = "Min Daily Temp") %>% 
+        addCircleMarkers(lng = ~lon,
+                         lat = ~lat,
+                         radius = 1,
+                         group = "Obs",
+                         layerId = ~uid,
+                         popup = paste("<em>",df$Species,"</em>", "<br>",
+                                       #sci2comm(df$Species)[[1]][1], "<br>",
+                                       "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
+                                       "<b> BDT.C: </b>", round(df$BDT.C, digits=2), "<br>",
+                                       "<b> SID: </b>", df$sid )) %>% #,
+        # popupGraph(ncdc_plot(ncdc(datasetid='GHCND',
+        #                           stationid=paste0('GHCND:', df$sid),
+        #                           datatypeid='tmax',
+        #                           startdate = '2020-01-01',
+        #                           enddate = '2020-05-21',
+        #                           limit=500,
+        #                           token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ"),
+        #                      breaks="1 month",
+        #                      dateformat="%m/%d"),
+        #            width = 300,
+        #            height = 400))) %>% 
+      setView(lng=-98.5795, lat=39.8283, zoom=4)  
+      #%>% 
+      map
     })
 }
 
