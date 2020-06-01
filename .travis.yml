@@ -24,13 +24,9 @@ r_packages:
   - taxize
   - AOI
   - climateR
-  - rgeos
-  - sf
   - raster
   - rasterVis
-  - sp
   - tidyverse
-  - rgdal
 
 script:
     - R -f deploy.R
