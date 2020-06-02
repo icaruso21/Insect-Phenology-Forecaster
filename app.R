@@ -156,8 +156,8 @@ degree.days.mat=function(Tmin, Tmax, LDT){
 #Slightly modified version for use with raster calc function
 degree.days.raster=function(x){
   LDT = 15
-  Tmin = x[1]
-  Tmax = x[2]
+  Tmin = x$tmin
+  Tmax = x$tmax
   
   #Tmin = cellVector[1]
   #Tmax = cellVector[2]
@@ -487,12 +487,24 @@ server <- function(input, output, session){
 
     r = raster::stack(p$tmax, p$tmin)
     names(r) = c('tmax', 'tmin')
-    #comp = calc(r, degree.days.raster)
+    # comp = calc(r, degree.days.raster)
+    # compr <- calc(r, function(x){degree.days.mat(x[1], x$tmin, 15)})
+    # 
+    # r <- na.omit(r)
+    # r$dd <- NA
+    # for (x in 90000:90100) {
+    #   print(degree.days.mat(r$tmin[x], r$tmax[x], 10))
+    # }
+    # for (i in 1:r@nrows) {
+    #   dd = degree.days.mat(r$tmin[i] / 10, r$tmax[i] / 10, 15.0)
+    #   r$dd[i] <- dd
+    # }
+    # n
     #raster::plot(r$tmax)
-    pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(r),
+    pal <- colorNumeric("plasma", values(r),
                         na.color = "transparent")
     # a = raster(r)
-    # rasterVis::levelplot(r)
+    rasterVis::levelplot(r)
     output$mymap <- renderLeaflet({
       df <- lat_long_df()
       map <- leaflet(data = df) %>%
@@ -502,8 +514,8 @@ server <- function(input, output, session){
         #addTiles() %>%
         addRasterImage(r$tmax, colors = pal, group = "tmax") %>%
         addRasterImage(r$tmin, colors = pal, group = "tmin") %>%
-        addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Max Daily Temp") %>% 
-        addLegend(pal = pal, values = values(r$tmin), group = "tmin", title = "Min Daily Temp") %>% 
+        addLegend(pal = pal, values = as.vector(268:316), group = "tmin", position = "bottomright", title = "Daily Temp") %>% 
+        #addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Min Daily Temp") %>% 
         addCircleMarkers(lng = ~lon,
                          lat = ~lat,
                          radius = 1,

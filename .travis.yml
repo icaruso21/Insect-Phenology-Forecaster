@@ -22,13 +22,11 @@ r_packages:
   - rnoaa
   - shinyWidgets
   - taxize
+  - AOI
+  - climateR
   - raster
   - rasterVis
   - tidyverse
-
-  remotes:
-      - AOI
-      - climateR
 
 script:
     - R -f deploy.R

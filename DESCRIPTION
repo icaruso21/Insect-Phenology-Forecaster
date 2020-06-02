@@ -1,2 +1,6 @@
 Package: insectPhenology
 Type: Shiny
+
+Remotes:
+    mikejohnson51/climateR,
+    mikejohnson51/AOI
