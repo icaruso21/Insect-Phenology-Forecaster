@@ -135,7 +135,8 @@ speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesSt
 #LDT:lower developmental threshold
 #------AM I CONFUSED? I thought Degree Days couldn't be negative... 
 degree.days.mat=function(Tmin, Tmax, LDT){
-    
+  if(is.na(Tmax) || is.na(Tmin)){return("Error")}
+  
     # entirely above LDT
     if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
     
@@ -154,11 +155,11 @@ degree.days.mat=function(Tmin, Tmax, LDT){
     return(dd)
 }
 #Slightly modified version for use with raster calc function
-degree.days.raster=function(x){
-  LDT = 15
-  Tmin = x$tmin
-  Tmax = x$tmax
-  
+degree.days.raster=function(x, LDT){
+  # LDT = 15
+  Tmin = x[1]
+  Tmax = x[2]
+  if(is.na(Tmax) || is.na(Tmin)){print("Error")}
   #Tmin = cellVector[1]
   #Tmax = cellVector[2]
   # entirely above LDT
@@ -488,14 +489,14 @@ server <- function(input, output, session){
     r = raster::stack(p$tmax, p$tmin)
     names(r) = c('tmax', 'tmin')
     # comp = calc(r, degree.days.raster)
-    # compr <- calc(r, function(x){degree.days.mat(x[1], x$tmin, 15)})
+     compr <- raster::calc(r, na.rm = TRUE, degree.days.raster(x, 15))
     # 
     # r <- na.omit(r)
     # r$dd <- NA
     # for (x in 90000:90100) {
     #   print(degree.days.mat(r$tmin[x], r$tmax[x], 10))
     # }
-    # for (i in 1:r@nrows) {
+    # for (i in 1:nrows(r)) {
     #   dd = degree.days.mat(r$tmin[i] / 10, r$tmax[i] / 10, 15.0)
     #   r$dd[i] <- dd
     # }

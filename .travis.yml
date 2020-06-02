@@ -22,8 +22,6 @@ r_packages:
   - rnoaa
   - shinyWidgets
   - taxize
-  - AOI
-  - climateR
   - raster
   - rasterVis
   - tidyverse
