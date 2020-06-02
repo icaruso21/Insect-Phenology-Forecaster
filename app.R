@@ -158,7 +158,7 @@ degree.days.raster=function(x, LDT){
   # LDT = 15
   Tmin = x[1]
   Tmax = x[2]
-  if(is.na(Tmax) || is.na(Tmin)){print("Error")}
+  if(is.na(Tmax) || is.na(Tmin)){return(NA)}
   #Tmin = cellVector[1]
   #Tmax = cellVector[2]
   # entirely above LDT

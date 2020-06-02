@@ -25,6 +25,10 @@ r_packages:
   - raster
   - rasterVis
   - tidyverse
+  
+Remotes:
+    mikejohnson51/climateR,
+    mikejohnson51/AOI
 
 script:
     - R -f deploy.R
