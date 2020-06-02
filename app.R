@@ -135,7 +135,6 @@ speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesSt
 #LDT:lower developmental threshold
 #------AM I CONFUSED? I thought Degree Days couldn't be negative... 
 degree.days.mat=function(Tmin, Tmax, LDT){
-  if(is.na(Tmax) || is.na(Tmin)){return("Error")}
   
     # entirely above LDT
     if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
@@ -489,7 +488,7 @@ server <- function(input, output, session){
     r = raster::stack(p$tmax, p$tmin)
     names(r) = c('tmax', 'tmin')
     # comp = calc(r, degree.days.raster)
-     compr <- raster::calc(r, na.rm = TRUE, degree.days.raster(x, 15))
+    # compr <- raster::calc(r, na.rm = TRUE, degree.days.raster(x, 15))
     # 
     # r <- na.omit(r)
     # r$dd <- NA
