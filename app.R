@@ -51,7 +51,7 @@ library(tidyverse)
 AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
 
 #Selecting certain columns and creating mean_* columns 
-dfWrangled <-  as.data.frame(AppendixS3_SeasonalityDatabase) %>% 
+dfWrangled <-  as_tibble(AppendixS3_SeasonalityDatabase) %>% 
     dplyr::select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
@@ -62,8 +62,9 @@ dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
 
 #Restrict to dat with lat / lon
 dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
-dfWrangled$uid <- seq.int(nrow(dfWrangled))
-
+dfWrangled$uid <- seq.int(nrow(dfWrangled))  
+  
+#dfWrangled = filter(dfWrangled, Species.1 == 'pomonella')
 #setwd("../Insect-Phenology-Forecaster")
 
 #Fill ghcnd stations local with necessary columns (not needed anymore i think)
@@ -82,12 +83,13 @@ latLonDF <- dplyr::select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
 
 #Shorten database for ease 
-latLonDF <- head(latLonDF, 50)
+num_spec = 65
+latLonDF <- head(latLonDF, num_spec)
 
 #Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
     rowwise %>% 
-    do( X = as_data_frame(.) ) %>% 
+    do( X = as_tibble(.) ) %>% 
     ungroup
 
 #read in current local copy of ghcnd stations 
@@ -112,7 +114,7 @@ stationLatLonDf <- pLatLonDF %>%
     unnest(cols = c(result)) %>% 
     rename(sid = id) %>% 
     dplyr::select("uid", "sid")
-stationLatLonDf$rank <- rep(c(1,2), length.out = 100)
+stationLatLonDf$rank <- rep(c(1,2), length.out = nrow(stationLatLonDf))
 stationLatLonDf <- spread(stationLatLonDf, rank, sid)
 colnames(stationLatLonDf) <- c("uid", "sid1", "sid2")
 
@@ -133,11 +135,14 @@ speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesSt
 #Input:
 #Tdat: 2 column matrix with Tmin followed by Tmax
 #LDT:lower developmental threshold
-#------AM I CONFUSED? I thought Degree Days couldn't be negative... 
+#------Adapted from Lauren Buckley (no longer allows for negative DDs and accepts NA values)
 degree.days.mat=function(Tmin, Tmax, LDT){
   
+    # print(Tmin)
+    # print(Tmax)
     # entirely above LDT
-    if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
+    if(is.na(Tmin) || is.na(Tmax)){dd = NA}
+    else{if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
     
     # intercepted by LDT
     ## for single sine wave approximation
@@ -149,35 +154,11 @@ degree.days.mat=function(Tmin, Tmax, LDT){
     } #matches online calculation
     
     # entirely below LDT
-    if(Tmax <= LDT){dd = 0}
+    if(Tmax <= LDT){dd = 0}}
     
     return(dd)
 }
-#Slightly modified version for use with raster calc function
-degree.days.raster=function(x, LDT){
-  # LDT = 15
-  Tmin = x[1]
-  Tmax = x[2]
-  if(is.na(Tmax) || is.na(Tmin)){return(NA)}
-  #Tmin = cellVector[1]
-  #Tmax = cellVector[2]
-  # entirely above LDT
-  if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
-  
-  # intercepted by LDT
-  ## for single sine wave approximation
-  if(Tmin<LDT && Tmax>LDT){
-    alpha=(Tmax-Tmin)/2
-    theta1=asin(((LDT-(Tmax+Tmin))/alpha)*pi/180)
-    dd=1/pi*(((Tmax+Tmin)/2-LDT)*(pi/2-theta1)+alpha*cos(theta1))
-    if(!is.na(dd))if(dd<0){dd=0}
-  } #matches online calculation
-  
-  # entirely below LDT
-  if(Tmax <= LDT){dd = 0}
-  
-  return(dd)
-}
+
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
 cumsum_with_reset <- function(x, threshold) {
     cumsum <- 0
@@ -309,35 +290,59 @@ safeSci2Com <- function(df) {
   return(com)
 }
 
-# 
-# AOI <- aoi_get(country = "usa") %>% 
-#   aoi_map(returnMap = TRUE)
-# 
-# AOI <- aoi_get(state = "conus") %>% 
-#   aoi_map(returnMap = TRUE) 
-# 
-# AOI <- aoi_get(state = "conus", union = TRUE) %>% 
-#   aoi_map(returnMap = TRUE) 
-# 
-# aoi_get(state = 'south') %>% 
-#   st_union() %>% 
-#   aoi_map(returnMap = TRUE)
-# 
-# aoi_get(state = 'conus', union = TRUE) %>% 
-#   aoi_map(returnMap = TRUE)
-# 
-# aoi_get(state = c('CA', 'OR', 'WA'), union = TRUE) %>% 
-#   aoi_map(returnMap = TRUE)
-# 
-# system.time({
-  # g = aoi_get(state = "conus") %>%  getGridMET(param = 'tmax', startDate = "2017-06-29")
-# })
-# 
-# raster::plot(g$tmax, col = viridis::viridis(100), axes = F, box= F)
-# title(main = "Solar Radiation 2017-06-29\n4km Resolution")
-# sp::plot(g$AOI, add = TRUE)
-# # 
-
+#-----Get raster accumulated DD for current year----------
+#--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
+accumulateDD <- function(start_date, end_date, BDT, EADDC, cum_DD = calc(r, fun = function(x){
+  degree.days.mat(x[2] / 10, x[1] / 10, BDT)})){
+  #Define area of interest 
+  AOI = aoi_get(state = "conus")
+  #Get temp raster stack for start_date
+  p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
+  r = raster::stack(p$tmax, p$tmin)
+  names(r) = c('tmax', 'tmin')
+  #Initialize cum_DD to DD values for start_date
+  # cum_DD <- calc(r, fun = function(x){
+  #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
+  #Set current day to the next start day
+  current_date = start_date + 1
+  #Accumulate Degree Days from current_date to end_date, inclusive.
+  while(current_date <= end_date){
+    #Get raster stack of tmin and tmax for current day
+    temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
+    tstack = raster::stack(temps$tmax, temps$tmin)
+    names(tstack) = c('tmax', 'tmin')
+    #Calculate todays DD values
+    current_DD <- calc(tstack, fun = function(x){degree.days.mat(x[2] -273.15, x[1] -273.15, BDT)})
+    #Add cumulative DD values to current_date DD values (current_DD)
+    cum_DD <- cum_DD + current_DD
+    #Reset cum_DD values greater than EADDC to 0
+    cum_DD <- calc(cum_DD, fun = function(cumul){
+      if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
+        return(as.vector(0))} 
+      else {
+        return(cumul[1])}})
+    #Increment current_date
+    current_date = current_date + 1
+  }
+  return(cum_DD)
+  #raster::plot(newR)
+}
+#raster::plot(pomonella2020, col = hcl.colors(5, palette = "RdYlGn"))
+# pomonella2020 <- raster::stack(pomonellaJ2020, pomonellaF2020, pomonellaM2020, pomonellaA2020, pomonellaMAY2020)
+# writeRaster(pomonella2020, "pomonella2020.grd")
+makeYear <- function(current_date, BDT = 9.65, EADDC = 607.6){
+  ydd <- accumulateDD(current_date, current_date, BDT, EADDC)
+  current_date = current_date + 1
+  pomo2020 <- raster::stack(ydd)
+while(Sys.Date()-2 >= current_date){
+  tdd <- accumulateDD(current_date, current_date, BDT, EADDC, ydd)
+  names(tdd) = c(current_date)
+  pomo2020 <- raster::stack(pomo2020, tdd)
+  ydd <- tdd
+  current_date = current_date + 1
+  writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
+}
+  return(pomo2020)}
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
@@ -480,41 +485,35 @@ server <- function(input, output, session){
     
     #-------Create map, add circle markers and popup-------
     
-    AOI = aoi_get(state = "conus")
-
-    p = getGridMET(AOI, param = c('tmax','tmin'), startDate = Sys.Date()-2)
-    #q = getGridMET(AOI, param = c('tmin'), startDate = "2018-8-15")
-
-    r = raster::stack(p$tmax, p$tmin)
-    names(r) = c('tmax', 'tmin')
-    # comp = calc(r, degree.days.raster)
-    # compr <- raster::calc(r, na.rm = TRUE, degree.days.raster(x, 15))
+    # AOI = aoi_get(state = "conus")
     # 
-    # r <- na.omit(r)
-    # r$dd <- NA
-    # for (x in 90000:90100) {
-    #   print(degree.days.mat(r$tmin[x], r$tmax[x], 10))
-    # }
-    # for (i in 1:nrows(r)) {
-    #   dd = degree.days.mat(r$tmin[i] / 10, r$tmax[i] / 10, 15.0)
-    #   r$dd[i] <- dd
-    # }
-    # n
-    #raster::plot(r$tmax)
-    pal <- colorNumeric("plasma", values(r),
+    # p = getGridMET(AOI, param = c('tmax','tmin'), startDate = Sys.Date()-2)
+    # #q = getGridMET(AOI, param = c('tmin'), startDate = "2018-8-15")
+    # 
+    # r = raster::stack(p$tmax, p$tmin)
+    # names(r) = c('tmax', 'tmin')
+    # ddMap <- calc(r, fun = function(x){degree.days.mat(x[2] / 10, x[1] / 10, 15)})
+    #raster::plot(newR)
+    pomonella2020 <- raster::stack("pomonella2020")
+    pal <- colorNumeric("RdYlGn", c(0, 610),
                         na.color = "transparent")
     # a = raster(r)
-    rasterVis::levelplot(r)
+    #rasterVis::levelplot(r)
     output$mymap <- renderLeaflet({
       df <- lat_long_df()
       map <- leaflet(data = df) %>%
         addProviderTiles(providers$OpenTopoMap) %>% 
-        addLayersControl(baseGroups = c("Obs", "tmax", "tmin")) %>% #, 
+        addLayersControl(baseGroups = c("Obs", "Jan", "Feb", "Mar", "Apr", "May")) %>% #, 
                          #options = layersControlOptions(collapsed = F)) %>% 
         #addTiles() %>%
-        addRasterImage(r$tmax, colors = pal, group = "tmax") %>%
-        addRasterImage(r$tmin, colors = pal, group = "tmin") %>%
-        addLegend(pal = pal, values = as.vector(268:316), group = "tmin", position = "bottomright", title = "Daily Temp") %>% 
+        addRasterImage(pomonella2020$layer.1, colors = pal, group = "Jan") %>%
+        addRasterImage(pomonella2020$layer.2, colors = pal, group = "Feb") %>%
+        addRasterImage(pomonella2020$layer.3, colors = pal, group = "Mar") %>%
+        addRasterImage(pomonella2020$layer.4, colors = pal, group = "Apr") %>%
+        addRasterImage(pomonella2020$layer.5, colors = pal, group = "May") %>%
+        
+        #addRasterImage(ddMap, colors = pal, group = "DD") %>%
+        addLegend(pal = pal, values = c(0, 610), group = "Jan", position = "bottomright", title = "Cumulative Degree Days") %>% 
         #addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Min Daily Temp") %>% 
         addCircleMarkers(lng = ~lon,
                          lat = ~lat,
