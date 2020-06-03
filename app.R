@@ -330,18 +330,18 @@ accumulateDD <- function(start_date, end_date, BDT, EADDC, cum_DD = calc(r, fun 
 #raster::plot(pomonella2020, col = hcl.colors(5, palette = "RdYlGn"))
 # pomonella2020 <- raster::stack(pomonellaJ2020, pomonellaF2020, pomonellaM2020, pomonellaA2020, pomonellaMAY2020)
 # writeRaster(pomonella2020, "pomonella2020.grd")
-makeYear <- function(current_date, BDT = 9.65, EADDC = 607.6){
+makeYear <- function(current_date, end_date = Sys.Date()-2, BDT = 9.65, EADDC = 607.6){
   ydd <- accumulateDD(current_date, current_date, BDT, EADDC)
   current_date = current_date + 1
   pomo2020 <- raster::stack(ydd)
-while(Sys.Date()-2 >= current_date){
+while(end_date >= current_date){
   tdd <- accumulateDD(current_date, current_date, BDT, EADDC, ydd)
   names(tdd) = c(current_date)
   pomo2020 <- raster::stack(pomo2020, tdd)
   ydd <- tdd
   current_date = current_date + 1
-  writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
 }
+  writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
   return(pomo2020)}
 
 #-----It's the user interface! (What the user sees)-------
@@ -494,7 +494,7 @@ server <- function(input, output, session){
     # names(r) = c('tmax', 'tmin')
     # ddMap <- calc(r, fun = function(x){degree.days.mat(x[2] / 10, x[1] / 10, 15)})
     #raster::plot(newR)
-    pomonella2020 <- raster::stack("pomonella2020")
+    pomonella2020 <- raster::stack("pomo2020")
     pal <- colorNumeric("RdYlGn", c(0, 610),
                         na.color = "transparent")
     # a = raster(r)
