@@ -47,23 +47,27 @@ library(tidyverse)
 
 #--------End Update of GHCND Stations----------
     
-#Import seasonality database
-AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
-
-#Selecting certain columns and creating mean_* columns 
-dfWrangled <-  as_tibble(AppendixS3_SeasonalityDatabase) %>% 
+get_dfWrangled <- function(){
+  #Import seasonality database
+  AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
+  
+  #Selecting certain columns and creating mean_* columns 
+  dfWrangled <-  as_tibble(AppendixS3_SeasonalityDatabase) %>% 
     dplyr::select(Species, Species.1, BDT.C, EADDC, lat, lon) %>% 
     group_by(Species.1) %>% 
     mutate(mean_BDT.C = mean(BDT.C, na.rm=TRUE),
            mean_EADDC = mean(EADDC, na.rm=TRUE))
-
-#Remove physiological outliers
-dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
-
-#Restrict to dat with lat / lon
-dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
-dfWrangled$uid <- seq.int(nrow(dfWrangled))  
   
+  #Remove physiological outliers
+  dfWrangled = subset(dfWrangled, dfWrangled$BDT.C > -7 & dfWrangled$EADDC < 2000)
+  
+  #Restrict to dat with lat / lon
+  dfWrangled = dfWrangled[which(!is.na(dfWrangled$lon) & !is.na(dfWrangled$lat) ),]
+  dfWrangled$uid <- seq.int(nrow(dfWrangled))  
+  return(dfWrangled)}
+
+dfWrangled <- get_dfWrangled()
+
 #dfWrangled = filter(dfWrangled, Species.1 == 'pomonella')
 #setwd("../Insect-Phenology-Forecaster")
 
@@ -292,11 +296,34 @@ safeSci2Com <- function(df) {
 
 #-----Get raster accumulated DD for current year----------
 #--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
-accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL){
+# Use the following function to subset dfWrangled, pass resulting BDT.C and EADDC columns into function, respectively.
+  #toAccumulate <- dfWrangled %>% filter(Species == "Aphis gossypii")
+accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL, species = NULL){
   #Define area of interest 
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
   
+  if(!is.null(species)){
+    toAccumulate <- get_dfWrangled() %>% filter(Species == species)
+    print(str_c("Species selected: ", species))
+    print("BDT Values Found: ")
+    print(toAccumulate$BDT.C)
+    BDT <- mean(toAccumulate$BDT.C)
+    print(str_c("Average BDT: ", BDT))
+    print("EADDC Values Found: ")
+    print(toAccumulate$EADDC)
+    EADDC <- mean(toAccumulate$EADDC)
+    print(str_c("Average EADDC: ", EADDC))}
+  #Find means of BDT and EADDC if vector of either is passed in
+  if(length(BDT) > 1){
+    print(str_c("Averaging BDTs: ", BDT))
+    BDT <- mean(BDT)
+    print(str_c("Average BDT: ", BDT))}
+  if(length(EADDC) > 1){
+    print(str_c("Averaging EADDCs: ", EADDC))
+    EADDC <- mean(EADDC)
+    print(str_c("Average EADDC: ", EADDC))}
+  print(str_c("BDT: ", BDT, ", EADDC: ", EADDC))
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
   #raster::plot(AOI)
