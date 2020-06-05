@@ -466,9 +466,14 @@ ui <- fluidPage(
                      min    = "1900-01-01",
                      format = "mm/dd/yy",
                      separator = " - "),
+    radioButtons(inputId = "computeDD",
+                 label = "Compute DD for date?",
+                 choiceNames = c("Compute", "Closest Available"),
+                 choiceValues = c(TRUE, FALSE),
+                 selected = FALSE),
     dateInput(inputId = "phenoDate", 
                    label = "Change layer date: ",
-                   value  = "2020-01-14",#Sys.Date()-2,
+                   value  = Sys.Date()-2,
                    min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
                    format = "mm/dd/yy"),
       plotOutput("predPlot", height = 300)
@@ -600,7 +605,7 @@ server <- function(input, output, session){
     # names(r) = c('tmax', 'tmin')
     # ddMap <- calc(r, fun = function(x){degree.days.mat(x[2] / 10, x[1] / 10, 15)})
     #raster::plot(newR)
-    pomonella2020 <- raster::stack("2020-03-16.grd")
+    pomonella2020 <- raster::stack("pomonella2020.grd")
     print(names(pomonella2020))
     pal <- colorNumeric("RdYlGn", c(0, 610),
                         na.color = "transparent")
@@ -653,7 +658,7 @@ server <- function(input, output, session){
       #%>% 
       dateR <- phenDate()
       print(dateR)
-      if(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
+      if(input$computeDD){if(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         output$pltInf <- renderPrint("Image rendering...")
         toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR))))
         map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
@@ -667,7 +672,14 @@ server <- function(input, output, session){
           toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
           map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
           output$pltInf <- renderPrint(str_c("DD for: ", dateR))
-          } 
+      }}else{
+        tempDate <- dateR
+        while(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+          tempDate <- tempDate - 1}
+        toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+        output$pltInf <- renderPrint(str_c("DD for: ", tempDate))
+          }
       map
     })
 }
