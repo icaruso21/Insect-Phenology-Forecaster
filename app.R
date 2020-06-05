@@ -607,8 +607,12 @@ server <- function(input, output, session){
     #raster::plot(newR)
     pomonella2020 <- raster::stack("pomonella2020.grd")
     print(names(pomonella2020))
-    pal <- colorNumeric("RdYlGn", c(0, 610),
-                        na.color = "transparent")
+    # pal <- colorNumeric("RdYlGn", c(0, 610),
+    #                     na.color = "transparent")
+    pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
+                    c(0, 610), 
+                    bins = c(0, 150, 300, 500, 607, 700),
+                    na.color = "transparent")
     # a = raster(r)
     #rasterVis::levelplot(r)
     phenDate <- reactive({
@@ -631,7 +635,11 @@ server <- function(input, output, session){
         # addRasterImage(pomonella2020$layer.5, colors = pal, group = "May") %>%
         
         #addRasterImage(ddMap, colors = pal, group = "DD") %>%
-        addLegend(pal = pal, values = c(0, 610), group = "Phen", position = "bottomright", title = "Cumulative Degree Days") %>% 
+        addLegend(pal = pal,
+                  values = c(0, 610),
+                  group = "Phen",
+                  position = "bottomright",
+                  title = "Cumulative Degree Days") %>% 
         #addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Min Daily Temp") %>% 
         addCircleMarkers(lng = ~lon,
                          lat = ~lat,
@@ -661,7 +669,7 @@ server <- function(input, output, session){
       if(input$computeDD){if(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         output$pltInf <- renderPrint("Image rendering...")
         toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
         output$pltInf <- renderPrint(str_c("DD for: ", dateR))
       }else{
           tempDate <- dateR
@@ -670,14 +678,14 @@ server <- function(input, output, session){
           output$pltInf <- renderPrint(str_c("Accumulating from: ", tempDate))
           toAccum <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
           toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
-          map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+          map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
           output$pltInf <- renderPrint(str_c("DD for: ", dateR))
       }}else{
         tempDate <- dateR
         while(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
         toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
         output$pltInf <- renderPrint(str_c("DD for: ", tempDate))
           }
       map
