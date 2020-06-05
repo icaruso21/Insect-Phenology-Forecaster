@@ -525,7 +525,8 @@ server <- function(input, output, session){
       uid <- click$id
       if(!is.null(uid)){
         time <- timeRange()
-        output$pltInf <- renderPrint("Temporarily down.")#renderPrint(safeSci2Com(speciesStationDF$Species[uid]))
+        output$pltInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
+                                              error = function(e){return("Common Name Dataset Not Available.")}))
 
         tMax1 <- ncdc(datasetid='GHCND',
                      stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
