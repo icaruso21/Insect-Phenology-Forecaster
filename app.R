@@ -296,13 +296,21 @@ safeSci2Com <- function(df) {
 
 #-----Get raster accumulated DD for current year----------
 #--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
-# Use the following function to subset dfWrangled, pass resulting BDT.C and EADDC columns into function, respectively.
-  #toAccumulate <- dfWrangled %>% filter(Species == "Aphis gossypii")
-accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL, species = NULL){
+#Required argument: 
+#   -     start_date: a date to begin accumulation at
+#Optional arguments:
+# Note: BDT and EADDC arguments must be specified if species is not specified 
+#       - end_date: a date to stop accumulation at (default: two days ago)
+#       - BDT: either an integer BDT value or a vector of values to be averaged    
+#       - EADDC: either an integer EADDC value or a vector of values to be averaged    
+#       - cum_DD: a rasterLayer containing cumulative Degree Day values on the start date
+#                 (Degree days will begin accumulating from here, otherwise they start at 0)
+#       - species: a string species name that will be queried to get mean BDT and EADDC values from ./AppendixS3_SeasonalityDatabase.csv
+accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
   #Define area of interest 
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
-  
+  if((is.null(BDT) !! is.null(EADDC)) && is.null(species)){return("Please provide BDT and EADDC arguments, or a species to query")}
   if(!is.null(species)){
     toAccumulate <- get_dfWrangled() %>% filter(Species == species)
     print(str_c("Species selected: ", species))
