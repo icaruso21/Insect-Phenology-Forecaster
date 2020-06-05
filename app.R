@@ -138,25 +138,25 @@ speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesSt
 #------Adapted from Lauren Buckley (no longer allows for negative DDs and accepts NA values)
 degree.days.mat=function(Tmin, Tmax, LDT){
   
-    # print(Tmin)
-    # print(Tmax)
-    # entirely above LDT
-    if(is.na(Tmin) || is.na(Tmax)){dd = NA}
-    else{if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
+  
+  # entirely above LDT
+  #|| is.null(Tmin) || is.null(Tmax)
+  if(is.na(Tmin) || is.na(Tmax) || is.null(Tmin) || is.null(Tmax)){dd = NA}
+  else{
+    if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
     
     # intercepted by LDT
     ## for single sine wave approximation
     if(Tmin<LDT && Tmax>LDT){
-        alpha=(Tmax-Tmin)/2
-        theta1=asin(((LDT-(Tmax+Tmin))/alpha)*pi/180)
-        dd=1/pi*(((Tmax+Tmin)/2-LDT)*(pi/2-theta1)+alpha*cos(theta1))
-        if(!is.na(dd))if(dd<0){dd=0}
+      alpha=(Tmax-Tmin)/2
+      theta1=asin(((LDT-(Tmax+Tmin))/alpha)*pi/180)
+      dd=1/pi*(((Tmax+Tmin)/2-LDT)*(pi/2-theta1)+alpha*cos(theta1))
+      if(!is.na(dd))if(dd<0){dd=0}
     } #matches online calculation
     
     # entirely below LDT
     if(Tmax <= LDT){dd = 0}}
-    
-    return(dd)
+  return(dd)
 }
 
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
@@ -292,18 +292,102 @@ safeSci2Com <- function(df) {
 
 #-----Get raster accumulated DD for current year----------
 #--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
-accumulateDD <- function(start_date, end_date, BDT, EADDC, cum_DD = calc(r, fun = function(x){
-  degree.days.mat(x[2] / 10, x[1] / 10, BDT)})){
+accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL){
   #Define area of interest 
+  if(!is.Date(start_date)){start_date <- as.Date(start_date)}
+  if(!is.Date(end_date)){end_date <- as.Date(end_date)}
+  
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
+  #raster::plot(AOI)
+  print(start_date)
   p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
   r = raster::stack(p$tmax, p$tmin)
   names(r) = c('tmax', 'tmin')
+  #print("not above here")
   #Initialize cum_DD to DD values for start_date
+  if(is.null(cum_DD)){
+    #print("initializing")
+    cum_DD <- calc(r, fun = function(x){
+      #print(value(x[2]))
+      degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+  }
+  print(cum_DD)
   # cum_DD <- calc(r, fun = function(x){
   #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
   #Set current day to the next start day
+  week <- 1
+  current_date = start_date + 1
+  the_stack <- NULL
+  #Accumulate Degree Days from current_date to end_date, inclusive.
+  while(current_date <= end_date){
+    #Get raster stack of tmin and tmax for current day
+    temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
+    tstack = raster::stack(temps$tmax, temps$tmin)
+    names(tstack) = c('tmax', 'tmin')
+    print(current_date)
+    #Calculate todays DD values
+    current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+    #print(identical(current_DD, cum_DD))
+    names(current_DD) = c(current_date)
+    #Add cumulative DD values to current_date DD values (current_DD)
+    cum_DD <- cum_DD + current_DD
+    #Reset cum_DD values greater than EADDC to 0
+    cum_DD <- calc(cum_DD, fun = function(cumul){
+      if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
+        return(as.vector(EADDC))} 
+      else {
+        return(cumul[1])}})
+    #Increment current_date
+    names(cum_DD) = c(current_date)
+    week <- week + 1
+    current_date = current_date + 1
+    if(week == 7){
+      the_stack <- raster::stack(cum_DD) 
+      print(the_stack)
+      print(names(the_stack))
+    }
+    if(week == 14){
+      #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
+      the_stack <- raster::stack(the_stack, cum_DD)
+      #writeRaster(the_stack, "holdraster.grd", overwrite=TRUE)
+      print(the_stack)
+      print(names(the_stack))
+      #the_stack <- NULL
+      week <- 7
+    }
+  }
+  #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
+  writeRaster(the_stack, str_c(current_date, ".grd"), overwrite=TRUE)
+  return(the_stack)
+  #raster::plot(newR)
+}
+
+accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL){
+  #Define area of interest 
+  if(!is.Date(start_date)){start_date <- as.Date(start_date)}
+  if(!is.Date(end_date)){end_date <- as.Date(end_date)}
+  
+  AOI = aoi_get(state = "conus")
+  #Get temp raster stack for start_date
+  #raster::plot(AOI)
+  print(start_date)
+  p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
+  r = raster::stack(p$tmax, p$tmin)
+  names(r) = c('tmax', 'tmin')
+  #print("not above here")
+  #Initialize cum_DD to DD values for start_date
+  if(is.null(cum_DD)){
+    #print("initializing")
+    cum_DD <- calc(r, fun = function(x){
+      #print(value(x[2]))
+      degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+  }
+  print(cum_DD)
+  # cum_DD <- calc(r, fun = function(x){
+  #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
+  #Set current day to the next start day
+  week <- 1
   current_date = start_date + 1
   #Accumulate Degree Days from current_date to end_date, inclusive.
   while(current_date <= end_date){
@@ -311,38 +395,55 @@ accumulateDD <- function(start_date, end_date, BDT, EADDC, cum_DD = calc(r, fun 
     temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
     tstack = raster::stack(temps$tmax, temps$tmin)
     names(tstack) = c('tmax', 'tmin')
+    print(current_date)
     #Calculate todays DD values
-    current_DD <- calc(tstack, fun = function(x){degree.days.mat(x[2] -273.15, x[1] -273.15, BDT)})
+    current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+    #print(identical(current_DD, cum_DD))
+    names(current_DD) = c(current_date)
     #Add cumulative DD values to current_date DD values (current_DD)
     cum_DD <- cum_DD + current_DD
     #Reset cum_DD values greater than EADDC to 0
     cum_DD <- calc(cum_DD, fun = function(cumul){
       if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
-        return(as.vector(0))} 
+        return(as.vector(EADDC))} 
       else {
         return(cumul[1])}})
     #Increment current_date
+    names(cum_DD) = c(current_date)
+    week <- week + 1
     current_date = current_date + 1
   }
+  #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
+  #writeRaster(the_stack, str_c(current_date, ".grd"), overwrite=TRUE)
   return(cum_DD)
   #raster::plot(newR)
 }
-#raster::plot(pomonella2020, col = hcl.colors(5, palette = "RdYlGn"))
+#raster::plot(jan15$, col = hcl.colors(5, palette = "RdYlGn"))
 # pomonella2020 <- raster::stack(pomonellaJ2020, pomonellaF2020, pomonellaM2020, pomonellaA2020, pomonellaMAY2020)
-# writeRaster(pomonella2020, "pomonella2020.grd")
-makeYear <- function(current_date, end_date = Sys.Date()-2, BDT = 9.65, EADDC = 607.6){
-  ydd <- accumulateDD(current_date, current_date, BDT, EADDC)
-  current_date = current_date + 1
-  pomo2020 <- raster::stack(ydd)
-while(end_date >= current_date){
-  tdd <- accumulateDD(current_date, current_date, BDT, EADDC, ydd)
-  names(tdd) = c(current_date)
-  pomo2020 <- raster::stack(pomo2020, tdd)
-  ydd <- tdd
-  current_date = current_date + 1
-}
-  writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
-  return(pomo2020)}
+# # writeRaster(pomonella2020, "pomonella2020.grd")
+# makeYear <- function(current_date, 
+#                      end_date = Sys.Date()-2, 
+#                      BDT = 9.65, 
+#                      EADDC = 607.6){#,
+#                      #yesterday_cumDD = NA){
+#   # if(!is.na(yesterday_cumDD)){
+#   #   ydd = accumulateDD(current_date, current_date + 6, BDT, EADDC, yesterday_cumDD)}
+#   # else{
+#     ydd = accumulateDD(current_date, current_date + 6, BDT, EADDC)#}
+#   print(current_date)
+#   current_date = current_date + 7
+#   print(current_date)
+#   pomo2020 <- raster::stack(ydd)
+# while(end_date >= current_date){
+#   tdd <- accumulateDD(current_date, current_date + 6, BDT, EADDC, ydd)
+#   names(tdd) = c(current_date)
+#   pomo2020 <- raster::stack(pomo2020, tdd)
+#   ydd <- tdd
+#   current_date = current_date + 7
+#   print(current_date)
+# }
+#   writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
+#   return(pomo2020)}
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
@@ -365,6 +466,11 @@ ui <- fluidPage(
                      min    = "1900-01-01",
                      format = "mm/dd/yy",
                      separator = " - "),
+    dateInput(inputId = "phenoDate", 
+                   label = "Change layer date: ",
+                   value  = "2020-01-14",#Sys.Date()-2,
+                   min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
+                   format = "mm/dd/yy"),
       plotOutput("predPlot", height = 300)
     ),
     
@@ -403,7 +509,7 @@ server <- function(input, output, session){
     timeRange <- reactive({
       x <- input$dateRange
     })
-    
+
     #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
     #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
     observeEvent({
@@ -494,26 +600,33 @@ server <- function(input, output, session){
     # names(r) = c('tmax', 'tmin')
     # ddMap <- calc(r, fun = function(x){degree.days.mat(x[2] / 10, x[1] / 10, 15)})
     #raster::plot(newR)
-    pomonella2020 <- raster::stack("pomo2020")
+    pomonella2020 <- raster::stack("2020-03-16.grd")
+    print(names(pomonella2020))
     pal <- colorNumeric("RdYlGn", c(0, 610),
                         na.color = "transparent")
     # a = raster(r)
     #rasterVis::levelplot(r)
+    phenDate <- reactive({
+      x <- input$phenoDate
+    })
+    
     output$mymap <- renderLeaflet({
       df <- lat_long_df()
       map <- leaflet(data = df) %>%
         addProviderTiles(providers$OpenTopoMap) %>% 
-        addLayersControl(baseGroups = c("Obs", "Jan", "Feb", "Mar", "Apr", "May")) %>% #, 
+        addLayersControl(baseGroups = c("Phen", "Obs")) %>% #, 
                          #options = layersControlOptions(collapsed = F)) %>% 
         #addTiles() %>%
-        addRasterImage(pomonella2020$layer.1, colors = pal, group = "Jan") %>%
-        addRasterImage(pomonella2020$layer.2, colors = pal, group = "Feb") %>%
-        addRasterImage(pomonella2020$layer.3, colors = pal, group = "Mar") %>%
-        addRasterImage(pomonella2020$layer.4, colors = pal, group = "Apr") %>%
-        addRasterImage(pomonella2020$layer.5, colors = pal, group = "May") %>%
+        #print(type(phenDate))
+           
+        # addRasterImage(pomonella2020$layer.1, colors = pal, group = "Phen") %>%
+        # addRasterImage(pomonella2020$layer.2, colors = pal, group = "Feb") %>%
+        # addRasterImage(pomonella2020$layer.3, colors = pal, group = "Mar") %>%
+        # addRasterImage(pomonella2020$layer.4, colors = pal, group = "Apr") %>%
+        # addRasterImage(pomonella2020$layer.5, colors = pal, group = "May") %>%
         
         #addRasterImage(ddMap, colors = pal, group = "DD") %>%
-        addLegend(pal = pal, values = c(0, 610), group = "Jan", position = "bottomright", title = "Cumulative Degree Days") %>% 
+        addLegend(pal = pal, values = c(0, 610), group = "Phen", position = "bottomright", title = "Cumulative Degree Days") %>% 
         #addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Min Daily Temp") %>% 
         addCircleMarkers(lng = ~lon,
                          lat = ~lat,
@@ -538,6 +651,23 @@ server <- function(input, output, session){
         #            height = 400))) %>% 
       setView(lng=-98.5795, lat=39.8283, zoom=4)  
       #%>% 
+      dateR <- phenDate()
+      print(dateR)
+      if(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
+        output$pltInf <- renderPrint("Image rendering...")
+        toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR))))
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+        output$pltInf <- renderPrint(str_c("DD for: ", dateR))
+      }else{
+          tempDate <- dateR
+        while(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+          tempDate <- tempDate - 1}
+          output$pltInf <- renderPrint(str_c("Accumulating from: ", tempDate))
+          toAccum <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
+          toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
+          map <- addRasterImage(map, toView, colors = pal, group = "Phen") 
+          output$pltInf <- renderPrint(str_c("DD for: ", dateR))
+          } 
       map
     })
 }
