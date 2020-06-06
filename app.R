@@ -17,39 +17,30 @@ library(raster)
 library(rasterVis)
 #library(sp)
 library(tidyverse)
+library(hash)
 #library(rgdal)
 #library(testit)
+                  #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
+#-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC value used in computation of rasterStack
+speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
+#Species name and corresponding filename
+availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 
-#---------------Only run this section if you want to update ghcnd-stations.txt-----------
-# 
-# 
-# stationsDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt"),
-#                              widths = c(11, 9, 11, 7, 2, 31, 5, 10),
-#                              header = FALSE, strip.white = TRUE, comment.char = "",
-#                              stringsAsFactors = FALSE)
-# inventoryDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-inventory.txt"),
-#                               widths = c(11, 9, 10, 5, 5, 5),
-#                               header = FALSE, strip.white = TRUE, comment.char = "",
-#                               stringsAsFactors = FALSE)
-# stationColNames <- c("id","latitude", "longitude", "elevation",
-#          "state", "name", "gsn_flag", "wmo_id")
-# inventoryColNames <- c("id","latitude", "longitude",
-#          "element", "first_year", "last_year")
-# 
-# ghcndStationsDaily <- stats::setNames(stationsDailyRaw, stationColNames)
-# ghcndInventoryDaily <- stats::setNames(inventoryDailyRaw, inventoryColNames)
-# 
-# ghcndStationsDailyComplete <- merge(ghcndStationsDaily, ghcndInventoryDaily[, -c(2, 3)], by = "id")
-# 
-# sturdyGHCNDStations <- tibble::as_tibble(ghcndStationsDailyComplete[stats::complete.cases(ghcndStationsDailyComplete), ])
-# 
-# saveRDS(sturdyGHCNDStations, file = "./ghcnd-stations-current.csv")
+updatePhenology <- function(ageDict = read_rds("./dat/forecastAge.csv")){
+  for (i in ageDict) {
+    print(ageDict[[1]])
+    if(as.numeric(Sys.Date() - ageDict[[i]]) >= 7){
+      toUpdate <- raster::stack(names(ageDict[[i]]))
+      accumulateDD(ageDict[[i]], 
+                   species = names(availablePhenoSpecies)[availablePhenoSpecies == names(ageDict[[i]])],
+                   cum_DD = raster(toUpdate, layer = nlayers(toUpdate)))
+    }
+  }}
+#--------------------------------------------------------------------------------
 
-#--------End Update of GHCND Stations----------
-    
 get_dfWrangled <- function(){
   #Import seasonality database
-  AppendixS3_SeasonalityDatabase <- read.csv("./AppendixS3_SeasonalityDatabase.csv", header=TRUE)
+  AppendixS3_SeasonalityDatabase <- read.csv("./dat/AppendixS3_SeasonalityDatabase.csv", header=TRUE)
   
   #Selecting certain columns and creating mean_* columns 
   dfWrangled <-  as_tibble(AppendixS3_SeasonalityDatabase) %>% 
@@ -68,20 +59,6 @@ get_dfWrangled <- function(){
 
 dfWrangled <- get_dfWrangled()
 
-#dfWrangled = filter(dfWrangled, Species.1 == 'pomonella')
-#setwd("../Insect-Phenology-Forecaster")
-
-#Fill ghcnd stations local with necessary columns (not needed anymore i think)
-# stations <- ghcndStationsLocal %>% 
-#     mutate(last_year = 2020,
-#            first_year = 2020,
-#            element = 0) 
-# colnames(stations)[1] <- "id"
-# colnames(stations)[2] <- "latitude"
-# colnames(stations)[3] <- "longitude"
-# colnames(stations)[4] <- "elevation"
-# colnames(stations)[5] <- "name"
-
 #Create necessary datarframe for RNOAA query
 latLonDF <- dplyr::select(dfWrangled, c("Species.1", "uid", "lat", "lon"))
 colnames(latLonDF) <- c("Species.1", "id", "latitude", "longitude")
@@ -96,8 +73,40 @@ pLatLonDF <- latLonDF %>%
     do( X = as_tibble(.) ) %>% 
     ungroup
 
+#---------------Only run the following if you want to update ghcnd-stations.txt------------
+#This will query NOAA for the most up to date info on weather stations in the GHCND network
+#The output is saved to a file called ghcnd-stations-current.csv, in the current working directory
+updateGHCNDStations <- function(){
+  print("Getting ghcnd-stations.txt from NOAA...")
+  stationsDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-stations.txt"),
+                               widths = c(11, 9, 11, 7, 2, 31, 5, 10),
+                               header = FALSE, strip.white = TRUE, comment.char = "",
+                               stringsAsFactors = FALSE)
+  print("Getting ghcnd-inventory.txt from NOAA...")
+  inventoryDailyRaw <- read.fwf(url("https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/ghcnd-inventory.txt"),
+                                widths = c(11, 9, 10, 5, 5, 5),
+                                header = FALSE, strip.white = TRUE, comment.char = "",
+                                stringsAsFactors = FALSE)
+  stationColNames <- c("id","latitude", "longitude", "elevation",
+                       "state", "name", "gsn_flag", "wmo_id")
+  inventoryColNames <- c("id","latitude", "longitude",
+                         "element", "first_year", "last_year")
+  
+  ghcndStationsDaily <- stats::setNames(stationsDailyRaw, stationColNames)
+  ghcndInventoryDaily <- stats::setNames(inventoryDailyRaw, inventoryColNames)
+  
+  ghcndStationsDailyComplete <- merge(ghcndStationsDaily, ghcndInventoryDaily[, -c(2, 3)], by = "id")
+  
+  sturdyGHCNDStations <- tibble::as_tibble(ghcndStationsDailyComplete[stats::complete.cases(ghcndStationsDailyComplete), ])
+  
+  saveRDS(sturdyGHCNDStations, file = "./dat/ghcnd-stations-current.csv")
+  
+  return(sturdyGHCNDStations)}
+
+#--------End Update of GHCND Stations----------
+
 #read in current local copy of ghcnd stations 
-localGHCNDStations <- readRDS(file = "./ghcnd-stations-current.csv")
+localGHCNDStations <- readRDS(file = "./dat/ghcnd-stations-current.csv")
 
 #Takes in a dataframe containing c("Species.1", "id", "latitude", "longitude") and returns info about nearest weather station 
 nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
@@ -294,7 +303,8 @@ safeSci2Com <- function(df) {
   return(com)
 }
 
-#-----Get raster accumulated DD for current year----------
+#-----Get rasterStack of accumulated DD for current year, by week------------
+#-----Also saves copy to dat folder with name species_name.grd or end_date if no species is provided
 #--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
 #Required argument: 
 #   -     start_date: a date to begin accumulation at
@@ -305,12 +315,12 @@ safeSci2Com <- function(df) {
 #       - EADDC: either an integer EADDC value or a vector of values to be averaged    
 #       - cum_DD: a rasterLayer containing cumulative Degree Day values on the start date
 #                 (Degree days will begin accumulating from here, otherwise they start at 0)
-#       - species: a string species name that will be queried to get mean BDT and EADDC values from ./AppendixS3_SeasonalityDatabase.csv
+#       - species: a string species name that will be queried to get mean BDT and EADDC values from ./dat/AppendixS3_SeasonalityDatabase.csv
 accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
   #Define area of interest 
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
-  if((is.null(BDT) !! is.null(EADDC)) && is.null(species)){return("Please provide BDT and EADDC arguments, or a species to query")}
+  if((is.null(BDT) || is.null(EADDC)) && is.null(species)){return("Please provide BDT and EADDC arguments, or a species to query")}
   if(!is.null(species)){
     toAccumulate <- get_dfWrangled() %>% filter(Species == species)
     print(str_c("Species selected: ", species))
@@ -392,8 +402,27 @@ accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC
       week <- 7
     }
   }
-  #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
-  writeRaster(the_stack, str_c(current_date, ".grd"), overwrite=TRUE)
+  
+  #Update ./dat/availablePhenoSpecies.csv and ./dat/phenoSpeciesEADDC.csv with new species entry
+  if(!is.null(species)){
+    filePath <- str_c("./dat/", make.names(species), ".grd")
+    availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
+    if(!is.null(availablePhenoSpecies[[species]])){availablePhenoSpecies[[species]] <- NULL}
+    else{
+      speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
+      speciesEADDC_Dict[[filePath]] <- EADDC
+      write_rds(speciesEADDC_Dict, "./dat/phenoSpeciesEADDC.csv")}
+    #Add species to available list
+    availablePhenoSpecies <- append(availablePhenoSpecies, filePath)
+    names(availablePhenoSpecies)[length(availablePhenoSpecies)] <- species
+    write_rds(availablePhenoSpecies, "./dat/availablePhenoSpecies.csv")}
+  else{filePath <- str_c("./dat/", make.names(current_date), ".grd")}
+  
+  #Save the raster to the dat folder
+  writeRaster(the_stack, filePath, overwrite=TRUE)
+  
+  
+  
   return(the_stack)
   #raster::plot(newR)
 }
@@ -480,6 +509,7 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
 #   writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
 #   return(pomo2020)}
 
+
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
     headerPanel('Insect Phenology Visualization'),
@@ -501,16 +531,21 @@ ui <- fluidPage(
                      min    = "1900-01-01",
                      format = "mm/dd/yy",
                      separator = " - "),
+    selectInput(inputId = "phenoSpecies",
+                label = "Select a species",
+                choices = availablePhenoSpecies,
+                multiple = FALSE,
+                selectize = TRUE),
+    dateInput(inputId = "phenoDate", 
+              label = "Change layer date: ",
+              value  = Sys.Date()-2,
+              min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
+              format = "mm/dd/yy"),
     radioButtons(inputId = "computeDD",
                  label = "Compute DD for date?",
                  choiceNames = c("Compute", "Closest Available"),
                  choiceValues = c(TRUE, FALSE),
                  selected = FALSE),
-    dateInput(inputId = "phenoDate", 
-                   label = "Change layer date: ",
-                   value  = Sys.Date()-2,
-                   min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
-                   format = "mm/dd/yy"),
       plotOutput("predPlot", height = 300)
     ),
     
@@ -631,52 +666,23 @@ server <- function(input, output, session){
     })
     
     #-------Create map, add circle markers and popup-------
-    
-    # AOI = aoi_get(state = "conus")
-    # 
-    # p = getGridMET(AOI, param = c('tmax','tmin'), startDate = Sys.Date()-2)
-    # #q = getGridMET(AOI, param = c('tmin'), startDate = "2018-8-15")
-    # 
-    # r = raster::stack(p$tmax, p$tmin)
-    # names(r) = c('tmax', 'tmin')
-    # ddMap <- calc(r, fun = function(x){degree.days.mat(x[2] / 10, x[1] / 10, 15)})
-    #raster::plot(newR)
-    pomonella2020 <- raster::stack("pomonella2020.grd")
-    print(names(pomonella2020))
-    # pal <- colorNumeric("RdYlGn", c(0, 610),
-    #                     na.color = "transparent")
-    pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
-                    c(0, 610), 
-                    bins = c(0, 150, 300, 500, 607, 700),
-                    na.color = "transparent")
-    # a = raster(r)
-    #rasterVis::levelplot(r)
     phenDate <- reactive({
       x <- input$phenoDate
     })
-    
+
     output$mymap <- renderLeaflet({
       df <- lat_long_df()
       map <- leaflet(data = df) %>%
         addProviderTiles(providers$OpenTopoMap) %>% 
-        addLayersControl(baseGroups = c("Phen", "Obs")) %>% #, 
-                         #options = layersControlOptions(collapsed = F)) %>% 
-        #addTiles() %>%
-        #print(type(phenDate))
-           
-        # addRasterImage(pomonella2020$layer.1, colors = pal, group = "Phen") %>%
-        # addRasterImage(pomonella2020$layer.2, colors = pal, group = "Feb") %>%
-        # addRasterImage(pomonella2020$layer.3, colors = pal, group = "Mar") %>%
-        # addRasterImage(pomonella2020$layer.4, colors = pal, group = "Apr") %>%
-        # addRasterImage(pomonella2020$layer.5, colors = pal, group = "May") %>%
+        addLayersControl(baseGroups = c("Phen", "Obs"),
+                         options = layersControlOptions(collapsed = FALSE)) %>% #, 
+        #options = layersControlOptions(collapsed = F)) %>% 
         
-        #addRasterImage(ddMap, colors = pal, group = "DD") %>%
-        addLegend(pal = pal,
-                  values = c(0, 610),
-                  group = "Phen",
-                  position = "bottomright",
-                  title = "Cumulative Degree Days") %>% 
-        #addLegend(pal = pal, values = values(r$tmax), group = "tmax", title = "Min Daily Temp") %>% 
+        # addLegend(pal = pal,
+        #           values = c(0, 610),
+        #           group = "Phen",
+        #           position = "bottomright",
+        #           title = "Cumulative Degree Days") %>% 
         addCircleMarkers(lng = ~lon,
                          lat = ~lat,
                          radius = 1,
@@ -699,31 +705,56 @@ server <- function(input, output, session){
         #            width = 300,
         #            height = 400))) %>% 
       setView(lng=-98.5795, lat=39.8283, zoom=4)  
-      #%>% 
+      
       dateR <- phenDate()
       print(dateR)
-      if(input$computeDD){if(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
+      addSpeciesRaster <- function(speciesPhenStack, EADDC){
+        if(is.wholenumber(EADDC)){EADDC = EADDC + 0.001}
+        pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
+                       c(0, EADDC), 
+                       bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
+                       na.color = "transparent")
+        
+        if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         output$pltInf <- renderPrint("Image rendering...")
-        toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', dateR))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
+        toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR))))
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) %>% 
+          addLegend(pal = pal,
+                    values = c(0, EADDC),
+                    group = "Phen",
+                    position = "bottomright",
+                    title = "Cumulative Degree Days")
         output$pltInf <- renderPrint(str_c("DD for: ", dateR))
       }else{
-          tempDate <- dateR
-        while(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+        tempDate <- dateR
+        while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
-          output$pltInf <- renderPrint(str_c("Accumulating from: ", tempDate))
-          toAccum <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
-          toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
-          map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
-          output$pltInf <- renderPrint(str_c("DD for: ", dateR))
+        output$pltInf <- renderPrint(str_c("Accumulating from: ", tempDate))
+        toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
+        toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) %>% 
+          addLegend(pal = pal,
+                    values = c(0, EADDC),
+                    group = "Phen",
+                    position = "bottomright",
+                    title = "Cumulative Degree Days")
+        output$pltInf <- renderPrint(str_c("DD for: ", dateR))
       }}else{
         tempDate <- dateR
-        while(reduce(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+        while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
-        toView <- raster(pomonella2020, layer = which(names(pomonella2020) %in% str_c('X', gsub('-', '.', tempDate))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) 
+        toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
+        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6)  %>% 
+          addLegend(pal = pal,
+                    values = c(0, EADDC),
+                    group = "Phen",
+                    position = "bottomright",
+                    title = "Cumulative Degree Days")
         output$pltInf <- renderPrint(str_c("DD for: ", tempDate))
-          }
+      }
+        return(map)}
+      map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
+                              EADDC = speciesEADDC_Dict[[input$phenoSpecies]])
       map
     })
 }
