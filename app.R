@@ -6,7 +6,7 @@ library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
 #library(ggplot2)
-#library(lubridate)
+library(lubridate)
 #library(leafpop)
 library(taxize)
 library(AOI)
@@ -38,8 +38,19 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
     last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
     file_age <- as.double.difftime(Sys.Date() - last_update)
     
-    #If the file is a week old, update it
-    if(file_age >= 7){
+    thisYear <- format(Sys.Date(), '%Y')
+    
+    #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
+    if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
+      print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
+      
+      accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
+                   Sys.Date() - 2, 
+                   species = name)
+      
+    }else{
+      #If the file is at least a week old and we have gridMET data for this year, update it
+      if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
       print(str_c("Updating ", name))
       toUpdate <- raster::stack(availableSpecies[[i]])
       accumulateDD(last_update - 2, 
@@ -48,7 +59,7 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
                    cum_DD = raster(toUpdate, layer = nlayers(toUpdate)))
       return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
     } else return(str_c(name, " was updated less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
-  })}
+ }})}
 
 #Execute function every time the app starts up to make sure files are up to date: 
 print(updatePhenology())
@@ -529,47 +540,43 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
   headerPanel('Insect Phenology Visualization'),
-  
-  sidebarPanel(
-    multiInput('sel_species',
-               'Select species: ',
-               choices = as.vector(unique(speciesStationDF$Species.1)),
-               selected = unique(speciesStationDF$Species.1)),
-    actionButton("all", "All"),
-    actionButton("none", "None"),
-    #actionButton("execute","Execute"),
-    # actionButton("updateDateRange", "View"),
-    #  hr(),
-    verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
-    dateRangeInput(inputId = "dateRange", 
-                   label = "Change date range: ",
-                   start  = "2020-01-01",
-                   min    = "1900-01-01",
-                   format = "mm/dd/yy",
-                   separator = " - "),
-    selectInput(inputId = "phenoSpecies",
-                label = "Select a species",
-                choices = availablePhenoSpecies,
-                multiple = FALSE,
-                selectize = TRUE),
-    dateInput(inputId = "phenoDate", 
-              label = "Change layer date: ",
-              value  = Sys.Date()-2,
-              min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
-              format = "mm/dd/yy"),
-    radioButtons(inputId = "computeDD",
-                 label = "Compute DD for date?",
-                 choiceNames = c("Compute", "Closest Available"),
-                 choiceValues = c(TRUE, FALSE),
-                 selected = FALSE),
-    plotOutput("predPlot", height = 300)
-  ),
-  
+  tabsetPanel(id = "tabset",
+    tabPanel("Phen", id = "Phen", sidebarPanel(
+      selectInput(inputId = "phenoSpecies",
+                  label = "Select a species",
+                  choices = availablePhenoSpecies,
+                  multiple = FALSE,
+                  selectize = TRUE),
+      dateInput(inputId = "phenoDate", 
+                label = "Change layer date: ",
+                value  = Sys.Date()-2,
+                min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
+                format = "mm/dd/yy"),
+      radioButtons(inputId = "computeDD",
+                   label = "Compute DD for date?",
+                   choiceNames = c("Compute", "Closest Available"),
+                   choiceValues = c(TRUE, FALSE),
+                   selected = FALSE)
+    )),
+    tabPanel("Obs", id = "Obs", sidebarPanel(
+      multiInput('sel_species',
+                 'Select species: ',
+                 choices = as.vector(unique(speciesStationDF$Species.1)),
+                 selected = unique(speciesStationDF$Species.1)),
+      actionButton("all", "All"),
+      actionButton("none", "None"),
+      dateRangeInput(inputId = "dateRange", 
+                     label = "Change date range: ",
+                     start  = "2020-01-01",
+                     min    = "1900-01-01",
+                     format = "mm/dd/yy",
+                     separator = " - "),
+      plotOutput("predPlot", height = 300)
+    ))),
   mainPanel(
-    leafletOutput("mymap", height = 600)
-  )
-  
-)
+    leafletOutput("mymap", height = 600),
+    verbatimTextOutput(outputId = "pltInf", placeholder = FALSE)
+  ))
 
 
 #------Here is the server for the shiny app (How the page becomes responsive)--------
@@ -772,6 +779,56 @@ server <- function(input, output, session){
     map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]])
     map
+  })
+  
+  getInputs <- function(pattern){
+    reactives <- names(reactiveValuesToList(input))
+    reactives[grep(pattern,reactives)]
+  }
+  
+
+  
+  observe({
+    selected_group <- req(input$mymap_groups)
+
+  #   computeRasterButton <- getInputs("computeDD")
+  #   computeRasterButton <- paste0("#", computeRasterButton)
+  #   obsPlot <- getInputs("predPlot")
+  #   obsPlot <- paste0("#", obsPlot)
+  #   phenRasterDate <- getInputs("phenoDate")
+  #   phenRasterDate <- paste0("#", phenRasterDate)
+  #   phenRasterSpecies <- getInputs("phenoSpecies")
+  #   print(phenRasterSpecies)
+  #   phenRasterSpecies <- paste0("#", phenRasterSpecies)
+  #   obsPlotDateRange <- getInputs("dateRange")
+  #   obsPlotDateRange <- paste0("#", obsPlotDateRange)
+  #   obsPlotMultiInput <- getInputs("sel_species")
+  #   obsPlotMultiInput <- paste0("#", obsPlotMultiInput)
+  #   obsAll <- getInputs("all")
+  #   obsAll <- paste0("#", obsAll)
+  #   obsNone <- getInputs("none")
+  #   obsNone <- paste0("#", obsNone)
+
+    if(selected_group == "Obs"){
+      hideTab("tabset", "Phen")
+      showTab("tabset", "Obs")
+    }else{
+      hideTab("tabset", "Obs")
+      showTab("tabset", "Phen")}
+  #     print("Removing Radio Buttons...")
+  #     
+  #     removeUI(selector = phenRasterDate)
+  #     removeUI(selector = phenRasterSpecies, immediate = TRUE)
+  #     removeUI(selector = computeRasterButton)
+  #     #insertUI(selector = "#pltInf")
+  #     
+  #   }else{
+  #     removeUI(selector = obsPlot)
+  #     removeUI(selector = obsNone)
+  #     removeUI(selector = obsAll)
+  #     removeUI(selector = obsPlotDateRange)
+  #     removeUI(selector = obsPlotMultiInput)
+  #   }
   })
 }
 
