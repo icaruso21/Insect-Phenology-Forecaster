@@ -18,11 +18,13 @@ library(rasterVis)
 #library(sp)
 library(tidyverse)
 library(hash)
+library(shinycssloaders)
 #library(rgdal)
 #library(testit)
 #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
-#-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC value used in computation of rasterStack
+#-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC/BDT values used in computation of rasterStack
 speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
+speciesBDT_Dict <- read_rds("./dat/phenoSpeciesBDT.csv")
 #Species name and corresponding filename
 availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 
@@ -438,7 +440,11 @@ accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC
     else{
       speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
       speciesEADDC_Dict[[filePath]] <- EADDC
-      write_rds(speciesEADDC_Dict, "./dat/phenoSpeciesEADDC.csv")}
+      write_rds(speciesEADDC_Dict, "./dat/phenoSpeciesEADDC.csv")
+      
+      speciesBDT_Dict <- read_rds("./dat/phenoSpeciesBDT.csv")
+      speciesBDT_Dict[[filePath]] <- BDT
+      write_rds(speciesBDT_Dict, "./dat/phenoSpeciesBDT.csv")}
     #Add species to available list
     availablePhenoSpecies <- append(availablePhenoSpecies, filePath)
     names(availablePhenoSpecies)[length(availablePhenoSpecies)] <- species
@@ -454,7 +460,9 @@ accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC
   #raster::plot(newR)
 }
 
-accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, EADDC = 607.6, cum_DD = NULL){
+
+#If user selects week in day, here's the update function to accumulate more degree days
+accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, cum_DD = NULL){
   #Define area of interest 
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
@@ -462,7 +470,9 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
   #raster::plot(AOI)
-  print(start_date)
+  print(str_c("Accumulating degree days starting at " , start_date, " until ", end_date, "..."))
+  print(str_c("BDT: ", BDT, ", EADDC: ", EADDC))
+  
   p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
   r = raster::stack(p$tmax, p$tmin)
   names(r) = c('tmax', 'tmin')
@@ -474,9 +484,9 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
       #print(value(x[2]))
       degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
   }
+  print("Initial raster layer: ")
   print(cum_DD)
-  # cum_DD <- calc(r, fun = function(x){
-  #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
+
   #Set current day to the next start day
   week <- 1
   current_date = start_date + 1
@@ -486,7 +496,7 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
     temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
     tstack = raster::stack(temps$tmax, temps$tmin)
     names(tstack) = c('tmax', 'tmin')
-    print(current_date)
+    print(str_c("Accumulating ", current_date))
     #Calculate todays DD values
     current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
     #print(identical(current_DD, cum_DD))
@@ -509,39 +519,13 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
   return(cum_DD)
   #raster::plot(newR)
 }
-#raster::plot(jan15$, col = hcl.colors(5, palette = "RdYlGn"))
-# pomonella2020 <- raster::stack(pomonellaJ2020, pomonellaF2020, pomonellaM2020, pomonellaA2020, pomonellaMAY2020)
-# # writeRaster(pomonella2020, "pomonella2020.grd")
-# makeYear <- function(current_date, 
-#                      end_date = Sys.Date()-2, 
-#                      BDT = 9.65, 
-#                      EADDC = 607.6){#,
-#                      #yesterday_cumDD = NA){
-#   # if(!is.na(yesterday_cumDD)){
-#   #   ydd = accumulateDD(current_date, current_date + 6, BDT, EADDC, yesterday_cumDD)}
-#   # else{
-#     ydd = accumulateDD(current_date, current_date + 6, BDT, EADDC)#}
-#   print(current_date)
-#   current_date = current_date + 7
-#   print(current_date)
-#   pomo2020 <- raster::stack(ydd)
-# while(end_date >= current_date){
-#   tdd <- accumulateDD(current_date, current_date + 6, BDT, EADDC, ydd)
-#   names(tdd) = c(current_date)
-#   pomo2020 <- raster::stack(pomo2020, tdd)
-#   ydd <- tdd
-#   current_date = current_date + 7
-#   print(current_date)
-# }
-#   writeRaster(pomo2020, "pomo2020.grd", overwrite=TRUE)
-#   return(pomo2020)}
 
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
   headerPanel('Insect Phenology Visualization'),
   tabsetPanel(id = "tabset",
-    tabPanel("Phen", id = "Phen", sidebarPanel(
+    tabPanel("Phenology Heatmap Controls", value = "Phen", sidebarPanel(
       selectInput(inputId = "phenoSpecies",
                   label = "Select a species",
                   choices = availablePhenoSpecies,
@@ -553,12 +537,12 @@ ui <- fluidPage(
                 min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
                 format = "mm/dd/yy"),
       radioButtons(inputId = "computeDD",
-                   label = "Compute DD for date?",
-                   choiceNames = c("Compute", "Closest Available"),
+                   label = "Heatmap resolution (May take a few minutes to compute if changed)",
+                   choiceNames = c("Day of Week (Up to 2 days ago)", "Week"),
                    choiceValues = c(TRUE, FALSE),
-                   selected = FALSE)
-    )),
-    tabPanel("Obs", id = "Obs", sidebarPanel(
+                   selected = FALSE),
+      verbatimTextOutput(outputId = "phnInf", placeholder = FALSE))),
+    tabPanel("Observation Marker Plot and Controls", value = "Obs", sidebarPanel(
       multiInput('sel_species',
                  'Select species: ',
                  choices = as.vector(unique(speciesStationDF$Species.1)),
@@ -566,16 +550,16 @@ ui <- fluidPage(
       actionButton("all", "All"),
       actionButton("none", "None"),
       dateRangeInput(inputId = "dateRange", 
-                     label = "Change date range: ",
+                     label = "Change date range for plot: ",
                      start  = "2020-01-01",
                      min    = "1900-01-01",
                      format = "mm/dd/yy",
                      separator = " - "),
-      plotOutput("predPlot", height = 300)
-    ))),
+      verbatimTextOutput(outputId = "obsInf", placeholder = FALSE) %>% withSpinner(color = "#228B22"),
+      plotOutput("predPlot", height = 300)))
+    ),
   mainPanel(
-    leafletOutput("mymap", height = 600),
-    verbatimTextOutput(outputId = "pltInf", placeholder = FALSE)
+    leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22")
   ))
 
 
@@ -617,8 +601,9 @@ server <- function(input, output, session){
     click<-input$mymap_marker_click
     uid <- click$id
     if(!is.null(uid)){
+      updateTabsetPanel(session, "tabset", selected = "Obs")
       time <- timeRange()
-      output$pltInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
+      output$obsInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
                                             error = function(e){return("Common Name Dataset Not Available.")}))
       
       tMax1 <- ncdc(datasetid='GHCND',
@@ -682,9 +667,9 @@ server <- function(input, output, session){
                 time[1],
                 breaks="1 month",
                 dateformat="%m/%d"))}
-      else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
+      else {output$obsInf <- renderPrint("No current RNOAA data available here.")}
     } else {
-      output$pltInf <- renderPrint("Select an observation from the map.")
+      output$obsInf <- renderPrint("Select an observation from the map.")
     }
   })
   
@@ -693,14 +678,15 @@ server <- function(input, output, session){
     x <- input$phenoDate
   })
   
+  #Render the correct map for viewing
   output$mymap <- renderLeaflet({
     df <- lat_long_df()
     map <- leaflet(data = df) %>%
       addProviderTiles(providers$OpenTopoMap) %>% 
-      addLayersControl(baseGroups = c("Phen", "Obs"),
-                       options = layersControlOptions(collapsed = FALSE)) %>% #, 
-      #options = layersControlOptions(collapsed = F)) %>% 
-      
+      addLayersControl(#baseGroups = c("Heatmap"),
+                       overlayGroups = c("Observations"),
+                       options = layersControlOptions(collapsed = FALSE, 
+                                                      autoZIndex = TRUE)) %>% 
       # addLegend(pal = pal,
       #           values = c(0, 610),
       #           group = "Phen",
@@ -708,8 +694,8 @@ server <- function(input, output, session){
       #           title = "Cumulative Degree Days") %>% 
       addCircleMarkers(lng = ~lon,
                        lat = ~lat,
-                       radius = 1,
-                       group = "Obs",
+                       radius = 2.5,
+                       group = "Observations",
                        layerId = ~uid,
                        popup = paste("<em>",df$Species,"</em>", "<br>",
                                      #sci2comm(df$Species)[[1]][1], "<br>",
@@ -730,8 +716,10 @@ server <- function(input, output, session){
     setView(lng=-98.5795, lat=39.8283, zoom=4)  
     
     dateR <- phenDate()
-    print(dateR)
-    addSpeciesRaster <- function(speciesPhenStack, EADDC){
+
+    #Add the correct raster, based on dateR (the user selected date), calculating and displaying the daily raster if desired
+    addSpeciesRaster <- function(speciesPhenStack, EADDC, BDT){
+      updateTabsetPanel(session, "tabset", selected = "Phn")
       if(is.wholenumber(EADDC)){EADDC = EADDC + 0.001}
       pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
                       c(0, EADDC), 
@@ -739,97 +727,84 @@ server <- function(input, output, session){
                       na.color = "transparent")
       
       if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
-        output$pltInf <- renderPrint("Image rendering...")
+        output$phnInf <- renderPrint("Image rendering...")
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) %>% 
+        map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
           addLegend(pal = pal,
                     values = c(0, EADDC),
-                    group = "Phen",
+                    group = "Heatmap",
                     position = "bottomright",
-                    title = "Cumulative Degree Days")
-        output$pltInf <- renderPrint(str_c("DD for: ", dateR))
+                    title = "Cumulative Degree Days") #%>% 
+          # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+          #                  options = layersControlOptions(collapsed = FALSE))
+        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
+                                          str_c("BDT: ", BDT),
+                                          str_c("EADDC: ", EADDC),
+                                          sep = "\n"))
       }else{
         tempDate <- dateR
         while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
-        output$pltInf <- renderPrint(str_c("Accumulating from: ", tempDate))
+        output$phnInf <- renderPrint(str_c("Accumulating from: ", tempDate))
         toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
-        toView <- accumulateDDPart(tempDate, dateR, cum_DD = toAccum)
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) %>% 
+        if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
+        toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
+        map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
           addLegend(pal = pal,
                     values = c(0, EADDC),
-                    group = "Phen",
+                    group = "Heatmap",
                     position = "bottomright",
-                    title = "Cumulative Degree Days")
-        output$pltInf <- renderPrint(str_c("DD for: ", dateR))
+                    title = "Cumulative Degree Days") #%>% 
+          # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+          #                  options = layersControlOptions(collapsed = FALSE))
+        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
+                                          str_c("BDT: ", BDT),
+                                          str_c("EADDC: ", EADDC),
+                                          sep = "\n"))
       }}else{
         tempDate <- dateR
         while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
-        map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6)  %>% 
+        map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6)  %>% 
           addLegend(pal = pal,
                     values = c(0, EADDC),
-                    group = "Phen",
+                    group = "Heatmap",
                     position = "bottomright",
-                    title = "Cumulative Degree Days")
-        output$pltInf <- renderPrint(str_c("DD for: ", tempDate))
+                    title = "Cumulative Degree Days") #%>% 
+          # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+          #                  options = layersControlOptions(collapsed = FALSE))
+        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", tempDate), 
+                                          str_c("BDT: ", BDT),
+                                          str_c("EADDC: ", EADDC),
+                                          sep = "\n"))
       }
       return(map)}
+    
+    #Add the species raster to the map (calls addRasterImage based on selected species and computes current day if chosen)
     map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
-                            EADDC = speciesEADDC_Dict[[input$phenoSpecies]])
+                            EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
+                            BDT = speciesBDT_Dict[[input$phenoSpecies]])
     map
   })
   
-  getInputs <- function(pattern){
-    reactives <- names(reactiveValuesToList(input))
-    reactives[grep(pattern,reactives)]
-  }
-  
 
-  
+  #Show UI controls for selected map group
   observe({
     selected_group <- req(input$mymap_groups)
-
-  #   computeRasterButton <- getInputs("computeDD")
-  #   computeRasterButton <- paste0("#", computeRasterButton)
-  #   obsPlot <- getInputs("predPlot")
-  #   obsPlot <- paste0("#", obsPlot)
-  #   phenRasterDate <- getInputs("phenoDate")
-  #   phenRasterDate <- paste0("#", phenRasterDate)
-  #   phenRasterSpecies <- getInputs("phenoSpecies")
-  #   print(phenRasterSpecies)
-  #   phenRasterSpecies <- paste0("#", phenRasterSpecies)
-  #   obsPlotDateRange <- getInputs("dateRange")
-  #   obsPlotDateRange <- paste0("#", obsPlotDateRange)
-  #   obsPlotMultiInput <- getInputs("sel_species")
-  #   obsPlotMultiInput <- paste0("#", obsPlotMultiInput)
-  #   obsAll <- getInputs("all")
-  #   obsAll <- paste0("#", obsAll)
-  #   obsNone <- getInputs("none")
-  #   obsNone <- paste0("#", obsNone)
-
-    if(selected_group == "Obs"){
-      hideTab("tabset", "Phen")
-      showTab("tabset", "Obs")
-    }else{
-      hideTab("tabset", "Obs")
-      showTab("tabset", "Phen")}
-  #     print("Removing Radio Buttons...")
-  #     
-  #     removeUI(selector = phenRasterDate)
-  #     removeUI(selector = phenRasterSpecies, immediate = TRUE)
-  #     removeUI(selector = computeRasterButton)
-  #     #insertUI(selector = "#pltInf")
-  #     
-  #   }else{
-  #     removeUI(selector = obsPlot)
-  #     removeUI(selector = obsNone)
-  #     removeUI(selector = obsAll)
-  #     removeUI(selector = obsPlotDateRange)
-  #     removeUI(selector = obsPlotMultiInput)
-  #   }
-  })
+    
+    if("Observations" %in% selected_group){
+      # if(match("Heatmap", selected_group)){
+        showTab("tabset", "Obs")
+        # showTab("tabset", "Phen")
+      # }else{
+        # hideTab("tabset", "Phen")
+        # showTab("tabset", "Obs")
+      }else{hideTab("tabset", "Obs")}
+    # }else if(selected_group == "Heatmap"){
+    #   hideTab("tabset", "Obs")
+    #   showTab("tabset", "Phen")}
+    })
 }
 
 #--------- Here, the shiny app is being executed--------
