@@ -1,12 +1,12 @@
 library(shiny)
 library(leaflet)
-library(dplyr)
-library(tidyr)
+#library(dplyr)
+#library(tidyr)
 library(mosaic)
 library(rnoaa)
 library(shinyWidgets)
-library(ggplot2)
-library(lubridate)
+#library(ggplot2)
+#library(lubridate)
 #library(leafpop)
 library(taxize)
 library(AOI)
@@ -20,22 +20,38 @@ library(tidyverse)
 library(hash)
 #library(rgdal)
 #library(testit)
-                  #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
+#DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
 #-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC value used in computation of rasterStack
 speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
 #Species name and corresponding filename
 availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 
-updatePhenology <- function(ageDict = read_rds("./dat/forecastAge.csv")){
-  for (i in ageDict) {
-    print(ageDict[[1]])
-    if(as.numeric(Sys.Date() - ageDict[[i]]) >= 7){
-      toUpdate <- raster::stack(names(ageDict[[i]]))
-      accumulateDD(ageDict[[i]], 
-                   species = names(availablePhenoSpecies)[availablePhenoSpecies == names(ageDict[[i]])],
+#--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
+#----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
+updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
+  lapply(seq_along(availableSpecies), function(i){
+    #Get name and filePath values from availableSpecies list at index i
+    name <- names(availableSpecies)[[i]]
+    filePath <- availableSpecies[[i]]
+    
+    #Calculate file age (in days) after fetching the last date it was modified
+    last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
+    file_age <- as.double.difftime(Sys.Date() - last_update)
+    
+    #If the file is a week old, update it
+    if(file_age >= 7){
+      print(str_c("Updating ", name))
+      toUpdate <- raster::stack(availableSpecies[[i]])
+      accumulateDD(last_update - 2, 
+                   Sys.Date() - 2, 
+                   species = name,
                    cum_DD = raster(toUpdate, layer = nlayers(toUpdate)))
-    }
-  }}
+      return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
+    } else return(str_c(name, " was updated less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
+  })}
+
+#Execute function every time the app starts up to make sure files are up to date: 
+print(updatePhenology())
 #--------------------------------------------------------------------------------
 
 get_dfWrangled <- function(){
@@ -69,9 +85,9 @@ latLonDF <- head(latLonDF, num_spec)
 
 #Turn each row to a dataframe 
 pLatLonDF <- latLonDF %>% 
-    rowwise %>% 
-    do( X = as_tibble(.) ) %>% 
-    ungroup
+  rowwise %>% 
+  do( X = as_tibble(.) ) %>% 
+  ungroup
 
 #---------------Only run the following if you want to update ghcnd-stations.txt------------
 #This will query NOAA for the most up to date info on weather stations in the GHCND network
@@ -116,17 +132,17 @@ nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
                                                   year_max = 2020,
                                                   radius = 500,
                                                   limit = 2
-                                                  )}
+)}
 
 #Take every dataframe in pLatLonDF and add a result column containing the RNOAA-station-id of the nearest weather station
 stationLatLonDf <- pLatLonDF %>% 
-    mutate(result = map(X, nearestStat)) %>% 
-    unnest(cols = c(X, result)) %>%
-    dplyr::select("Species.1", "id", "result") %>% 
-    rename(uid = id) %>% 
-    unnest(cols = c(result)) %>% 
-    rename(sid = id) %>% 
-    dplyr::select("uid", "sid")
+  mutate(result = map(X, nearestStat)) %>% 
+  unnest(cols = c(X, result)) %>%
+  dplyr::select("Species.1", "id", "result") %>% 
+  rename(uid = id) %>% 
+  unnest(cols = c(result)) %>% 
+  rename(sid = id) %>% 
+  dplyr::select("uid", "sid")
 stationLatLonDf$rank <- rep(c(1,2), length.out = nrow(stationLatLonDf))
 stationLatLonDf <- spread(stationLatLonDf, rank, sid)
 colnames(stationLatLonDf) <- c("uid", "sid1", "sid2")
@@ -174,32 +190,32 @@ degree.days.mat=function(Tmin, Tmax, LDT){
 
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
 cumsum_with_reset <- function(x, threshold) {
-    cumsum <- 0
-    group <- 1
-    result <- numeric()
-    
-    for (i in 1:length(x)) {
-        if (cumsum == threshold){
-            group <- group + 1
-            cumsum <- 0
-        }
-        
-        cumsum <- cumsum + x[i]
-        
-        if (cumsum > threshold) {
-            cumsum <- threshold
-        }
-        
-        result = c(result, cumsum)
-        
+  cumsum <- 0
+  group <- 1
+  result <- numeric()
+  
+  for (i in 1:length(x)) {
+    if (cumsum == threshold){
+      group <- group + 1
+      cumsum <- 0
     }
     
-    return (result)
+    cumsum <- cumsum + x[i]
+    
+    if (cumsum > threshold) {
+      cumsum <- threshold
+    }
+    
+    result = c(result, cumsum)
+    
+  }
+  
+  return (result)
 }
 
 #-----Graphing Helper Functions---------
 dd_plot <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
-    UseMethod("dd_plot")
+  UseMethod("dd_plot")
 }
 
 
@@ -242,15 +258,15 @@ dd_plot.tbl_df <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, br
   #     mutate (dd = degree.days.mat(TMIN, TMAX, BDT)) %>% 
   
   #split year 
-#  date= as.Date(dfTEMP$date, "%Y-%m-$d")
-#  dfTEMP$year=as.numeric(format(date, "%Y"))
+  #  date= as.Date(dfTEMP$date, "%Y-%m-$d")
+  #  dfTEMP$year=as.numeric(format(date, "%Y"))
   
   ## FIND YEARS WITH NEARLY COMPLETE DATA
-   # dat.agg= aggregate(dfTEMP, list(dfTEMP$year),FUN=count)  ### PROBLEM IF RASTER LOADED
-   # years= dat.agg$Group.1[which(dat.agg$TMAX>50)]
-   # dfTEMP= dfTEMP[which(dfTEMP$year %in% years),]
-
-    #na.omit()
+  # dat.agg= aggregate(dfTEMP, list(dfTEMP$year),FUN=count)  ### PROBLEM IF RASTER LOADED
+  # years= dat.agg$Group.1[which(dat.agg$TMAX>50)]
+  # dfTEMP= dfTEMP[which(dfTEMP$year %in% years),]
+  
+  #na.omit()
   dfTEMP <- na.omit(dfTEMP)
   dfTEMP$dd <- NA
   for (i in 1:nrow(dfTEMP)) {
@@ -273,20 +289,20 @@ dd_plot.tbl_df <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, br
 
 
 dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
-    stop("No method for ", class(list(tMax1)[[1]]), call. = FALSE)
+  stop("No method for ", class(list(tMax1)[[1]]), call. = FALSE)
 }
 
 plot_template <- function(df, breaks, dateformat) {
-    tt <- list(
-        theme_bw(base_size = 18),
-        geom_line(size = 2),
-        labs(y = "Cumulative Degree Days", x = "Date")
-    )
-    if (!is.null(breaks)) {
-        c(tt, scale_x_date(date_breaks = breaks, date_labels = dateformat))
-    } else {
-        tt
-    }
+  tt <- list(
+    theme_bw(base_size = 18),
+    geom_line(size = 2),
+    labs(y = "Cumulative Degree Days", x = "Date")
+  )
+  if (!is.null(breaks)) {
+    c(tt, scale_x_date(date_breaks = breaks, date_labels = dateformat))
+  } else {
+    tt
+  }
 }
 #--------End graphing helper functions--------------------
 
@@ -512,25 +528,25 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT = 9.65, E
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
-    headerPanel('Insect Phenology Visualization'),
-    
-    sidebarPanel(
-      multiInput('sel_species',
-                 'Select species: ',
-                 choices = as.vector(unique(speciesStationDF$Species.1)),
-                 selected = unique(speciesStationDF$Species.1)),
-      actionButton("all", "All"),
-      actionButton("none", "None"),
-      #actionButton("execute","Execute"),
-      # actionButton("updateDateRange", "View"),
+  headerPanel('Insect Phenology Visualization'),
+  
+  sidebarPanel(
+    multiInput('sel_species',
+               'Select species: ',
+               choices = as.vector(unique(speciesStationDF$Species.1)),
+               selected = unique(speciesStationDF$Species.1)),
+    actionButton("all", "All"),
+    actionButton("none", "None"),
+    #actionButton("execute","Execute"),
+    # actionButton("updateDateRange", "View"),
     #  hr(),
-      verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
-      dateRangeInput(inputId = "dateRange", 
-                     label = "Change date range: ",
-                     start  = "2020-01-01",
-                     min    = "1900-01-01",
-                     format = "mm/dd/yy",
-                     separator = " - "),
+    verbatimTextOutput(outputId = "pltInf", placeholder = FALSE),
+    dateRangeInput(inputId = "dateRange", 
+                   label = "Change date range: ",
+                   start  = "2020-01-01",
+                   min    = "1900-01-01",
+                   format = "mm/dd/yy",
+                   separator = " - "),
     selectInput(inputId = "phenoSpecies",
                 label = "Select a species",
                 choices = availablePhenoSpecies,
@@ -546,176 +562,176 @@ ui <- fluidPage(
                  choiceNames = c("Compute", "Closest Available"),
                  choiceValues = c(TRUE, FALSE),
                  selected = FALSE),
-      plotOutput("predPlot", height = 300)
-    ),
-    
-    mainPanel(
-        leafletOutput("mymap", height = 600)
-    )
-    
+    plotOutput("predPlot", height = 300)
+  ),
+  
+  mainPanel(
+    leafletOutput("mymap", height = 600)
+  )
+  
 )
 
 
 #------Here is the server for the shiny app (How the page becomes responsive)--------
 server <- function(input, output, session){
-    
-    #Create a reactive dataframe which changes based on the selected species from the multi input tool
-    lat_long_df <- reactive({
-        x <- speciesStationDF %>% 
-            filter(Species.1 %in% input$sel_species) 
-    })
-    
-    #Listen for a button click (all or none) and change selections accordingly
-    observeEvent(input$all, {
-        updateMultiInput(
-            session = session,
-            inputId = "sel_species",
-            selected = unique(speciesStationDF$Species.1)
-        )
-    })
-    observeEvent(input$none, {
-        updateMultiInput(
-            session = session,
-            inputId = "sel_species",
-            selected = character(0)
-        )
-    })
-    
-    timeRange <- reactive({
-      x <- input$dateRange
-    })
-
-    #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
-    #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
-    observeEvent({
-      input$mymap_marker_click
-      timeRange()
-    }, {
-      click<-input$mymap_marker_click
-      uid <- click$id
-      if(!is.null(uid)){
-        time <- timeRange()
-        output$pltInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
-                                              error = function(e){return("Common Name Dataset Not Available.")}))
-
-        tMax1 <- ncdc(datasetid='GHCND',
-                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
-                     datatypeid= "TMAX",
-                     startdate = time[1],
-                     enddate = time[2],
-                     limit=500,
-                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-        
-        tMax2 <- ncdc(datasetid='GHCND',
-                      stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
-                      datatypeid= "TMAX",
-                      startdate = time[1],
-                      enddate = time[2],
-                      limit=500,
-                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-        
-        ifelse(nrow(tMax1$data)==0,
-               tMax1 <- NA,
-               tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
-        )
-        ifelse(nrow(tMax2$data)==0,
-               tMax2 <- NA,
-               tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
-        )
-        
-        tMin1 <- ncdc(datasetid='GHCND',
-                      stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
-                      datatypeid= "TMIN",
-                      startdate = time[1],
-                      enddate = time[2],
-                      limit=500,
-                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-        
-        tMin2 <- ncdc(datasetid='GHCND',
-                      stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
-                      datatypeid= "TMIN",
-                      startdate = time[1],
-                      enddate = time[2],
-                      limit=500,
-                      token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-        
-        ifelse(nrow(tMin1$data)==0,
-               tMin1 <- NA,
-               tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
-        )
-        ifelse(nrow(tMin2$data)==0,
-               tMin2 <- NA,
-               tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
-        )
-        
-        if(!is.na(tMax1) && !is.na(tMax2))
-        {output$predPlot <- renderPlot(
-          dd_plot(tMax1, 
-                  tMax2, 
-                  tMin1, 
-                  tMin2,
-                  speciesStationDF$BDT.C[uid],
-                  speciesStationDF$EADDC[uid],
-                  time[1],
-                  breaks="1 month",
-                  dateformat="%m/%d"))}
-        else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
-      } else {
-        output$pltInf <- renderPrint("Select an observation from the map.")
-      }
-    })
-    
-    #-------Create map, add circle markers and popup-------
-    phenDate <- reactive({
-      x <- input$phenoDate
-    })
-
-    output$mymap <- renderLeaflet({
-      df <- lat_long_df()
-      map <- leaflet(data = df) %>%
-        addProviderTiles(providers$OpenTopoMap) %>% 
-        addLayersControl(baseGroups = c("Phen", "Obs"),
-                         options = layersControlOptions(collapsed = FALSE)) %>% #, 
-        #options = layersControlOptions(collapsed = F)) %>% 
-        
-        # addLegend(pal = pal,
-        #           values = c(0, 610),
-        #           group = "Phen",
-        #           position = "bottomright",
-        #           title = "Cumulative Degree Days") %>% 
-        addCircleMarkers(lng = ~lon,
-                         lat = ~lat,
-                         radius = 1,
-                         group = "Obs",
-                         layerId = ~uid,
-                         popup = paste("<em>",df$Species,"</em>", "<br>",
-                                       #sci2comm(df$Species)[[1]][1], "<br>",
-                                       "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
-                                       "<b> BDT.C: </b>", round(df$BDT.C, digits=2), "<br>",
-                                       "<b> SID: </b>", df$sid )) %>% #,
-        # popupGraph(ncdc_plot(ncdc(datasetid='GHCND',
-        #                           stationid=paste0('GHCND:', df$sid),
-        #                           datatypeid='tmax',
-        #                           startdate = '2020-01-01',
-        #                           enddate = '2020-05-21',
-        #                           limit=500,
-        #                           token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ"),
-        #                      breaks="1 month",
-        #                      dateformat="%m/%d"),
-        #            width = 300,
-        #            height = 400))) %>% 
-      setView(lng=-98.5795, lat=39.8283, zoom=4)  
+  
+  #Create a reactive dataframe which changes based on the selected species from the multi input tool
+  lat_long_df <- reactive({
+    x <- speciesStationDF %>% 
+      filter(Species.1 %in% input$sel_species) 
+  })
+  
+  #Listen for a button click (all or none) and change selections accordingly
+  observeEvent(input$all, {
+    updateMultiInput(
+      session = session,
+      inputId = "sel_species",
+      selected = unique(speciesStationDF$Species.1)
+    )
+  })
+  observeEvent(input$none, {
+    updateMultiInput(
+      session = session,
+      inputId = "sel_species",
+      selected = character(0)
+    )
+  })
+  
+  timeRange <- reactive({
+    x <- input$dateRange
+  })
+  
+  #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
+  #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
+  observeEvent({
+    input$mymap_marker_click
+    timeRange()
+  }, {
+    click<-input$mymap_marker_click
+    uid <- click$id
+    if(!is.null(uid)){
+      time <- timeRange()
+      output$pltInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
+                                            error = function(e){return("Common Name Dataset Not Available.")}))
       
-      dateR <- phenDate()
-      print(dateR)
-      addSpeciesRaster <- function(speciesPhenStack, EADDC){
-        if(is.wholenumber(EADDC)){EADDC = EADDC + 0.001}
-        pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
-                       c(0, EADDC), 
-                       bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
-                       na.color = "transparent")
-        
-        if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
+      tMax1 <- ncdc(datasetid='GHCND',
+                    stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
+                    datatypeid= "TMAX",
+                    startdate = time[1],
+                    enddate = time[2],
+                    limit=500,
+                    token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+      
+      tMax2 <- ncdc(datasetid='GHCND',
+                    stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
+                    datatypeid= "TMAX",
+                    startdate = time[1],
+                    enddate = time[2],
+                    limit=500,
+                    token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+      
+      ifelse(nrow(tMax1$data)==0,
+             tMax1 <- NA,
+             tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
+      )
+      ifelse(nrow(tMax2$data)==0,
+             tMax2 <- NA,
+             tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
+      )
+      
+      tMin1 <- ncdc(datasetid='GHCND',
+                    stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
+                    datatypeid= "TMIN",
+                    startdate = time[1],
+                    enddate = time[2],
+                    limit=500,
+                    token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+      
+      tMin2 <- ncdc(datasetid='GHCND',
+                    stationid= paste0('GHCND:', speciesStationDF$sid2[uid]),
+                    datatypeid= "TMIN",
+                    startdate = time[1],
+                    enddate = time[2],
+                    limit=500,
+                    token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+      
+      ifelse(nrow(tMin1$data)==0,
+             tMin1 <- NA,
+             tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
+      )
+      ifelse(nrow(tMin2$data)==0,
+             tMin2 <- NA,
+             tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
+      )
+      
+      if(!is.na(tMax1) && !is.na(tMax2))
+      {output$predPlot <- renderPlot(
+        dd_plot(tMax1, 
+                tMax2, 
+                tMin1, 
+                tMin2,
+                speciesStationDF$BDT.C[uid],
+                speciesStationDF$EADDC[uid],
+                time[1],
+                breaks="1 month",
+                dateformat="%m/%d"))}
+      else {output$pltInf <- renderPrint("No current RNOAA data available here.")}
+    } else {
+      output$pltInf <- renderPrint("Select an observation from the map.")
+    }
+  })
+  
+  #-------Create map, add circle markers and popup-------
+  phenDate <- reactive({
+    x <- input$phenoDate
+  })
+  
+  output$mymap <- renderLeaflet({
+    df <- lat_long_df()
+    map <- leaflet(data = df) %>%
+      addProviderTiles(providers$OpenTopoMap) %>% 
+      addLayersControl(baseGroups = c("Phen", "Obs"),
+                       options = layersControlOptions(collapsed = FALSE)) %>% #, 
+      #options = layersControlOptions(collapsed = F)) %>% 
+      
+      # addLegend(pal = pal,
+      #           values = c(0, 610),
+      #           group = "Phen",
+      #           position = "bottomright",
+      #           title = "Cumulative Degree Days") %>% 
+      addCircleMarkers(lng = ~lon,
+                       lat = ~lat,
+                       radius = 1,
+                       group = "Obs",
+                       layerId = ~uid,
+                       popup = paste("<em>",df$Species,"</em>", "<br>",
+                                     #sci2comm(df$Species)[[1]][1], "<br>",
+                                     "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
+                                     "<b> BDT.C: </b>", round(df$BDT.C, digits=2), "<br>",
+                                     "<b> SID: </b>", df$sid )) %>% #,
+      # popupGraph(ncdc_plot(ncdc(datasetid='GHCND',
+      #                           stationid=paste0('GHCND:', df$sid),
+      #                           datatypeid='tmax',
+      #                           startdate = '2020-01-01',
+      #                           enddate = '2020-05-21',
+      #                           limit=500,
+      #                           token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ"),
+      #                      breaks="1 month",
+      #                      dateformat="%m/%d"),
+      #            width = 300,
+      #            height = 400))) %>% 
+    setView(lng=-98.5795, lat=39.8283, zoom=4)  
+    
+    dateR <- phenDate()
+    print(dateR)
+    addSpeciesRaster <- function(speciesPhenStack, EADDC){
+      if(is.wholenumber(EADDC)){EADDC = EADDC + 0.001}
+      pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
+                      c(0, EADDC), 
+                      bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
+                      na.color = "transparent")
+      
+      if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         output$pltInf <- renderPrint("Image rendering...")
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR))))
         map <- addRasterImage(map, toView, colors = pal, group = "Phen", opacity = 0.6) %>% 
@@ -752,11 +768,11 @@ server <- function(input, output, session){
                     title = "Cumulative Degree Days")
         output$pltInf <- renderPrint(str_c("DD for: ", tempDate))
       }
-        return(map)}
-      map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
-                              EADDC = speciesEADDC_Dict[[input$phenoSpecies]])
-      map
-    })
+      return(map)}
+    map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
+                            EADDC = speciesEADDC_Dict[[input$phenoSpecies]])
+    map
+  })
 }
 
 #--------- Here, the shiny app is being executed--------
