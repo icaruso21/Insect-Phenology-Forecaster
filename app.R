@@ -9,8 +9,6 @@ library(shinyWidgets)
 library(lubridate)
 #library(leafpop)
 library(taxize)
-library(AOI)
-library(climateR)
 #library(rgeos)
 #library(sf)
 library(raster)
@@ -19,6 +17,12 @@ library(rasterVis)
 library(tidyverse)
 library(hash)
 library(shinycssloaders)
+library(rgdal)
+remotes::install_github("mikejohnson51/AOI")
+remotes::install_github("mikejohnson51/climateR")
+library(AOI)
+library(climateR)
+
 #library(rgdal)
 #library(testit)
 #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
@@ -604,7 +608,7 @@ server <- function(input, output, session){
       updateTabsetPanel(session, "tabset", selected = "Obs")
       time <- timeRange()
       output$obsInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
-                                            error = function(e){return("Common Name Dataset Not Available.")}))
+                                            error = function(e){return(speciesStationDF$Species[uid])}))
       
       tMax1 <- ncdc(datasetid='GHCND',
                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
