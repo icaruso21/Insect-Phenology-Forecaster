@@ -30,13 +30,14 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 			 - *Week* (default): Display's previously calculated heatmap for the week that contains the selected date.
 			 - *Day of Week*: Can take several minutes to compute date specific cumulative degree days across the United States. **Use with caution!** 
  - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances. When an observation is selected, a plot of accumulated degree days for the current date range will be displayed. 
- *Note*: The simplifying assumption that offspring are immediatly produced upon the emergence of new adults was made (allows for multiple generations per year). When accumulated degree days equals EADDC, one generation reaches adulthood and the accumulated 
 	 - User controls:
 		 - *Select species*: Select (or deselect) species' whose observations will be displayed
 		 - *Date range*: The period of time to plot accumulated degree days for, starting from 0 at the start date. (Default: first day of this year to yesterday)
 
+	*Note concerning *: The simplifying assumption that offspring are immediatly produced upon the emergence of new adults was made (allows for multiple generations per year). When accumulated degree days equals EADDC, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation.
+
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzM4ODk3NjkzLDExMTQzMzc0MTQsMjI1MT
-YyMzQwLDUxMDQ2ODMzMiwzOTQyNTc0NTldfQ==
+eyJoaXN0b3J5IjpbLTEyNzE3MDA5MDYsMTExNDMzNzQxNCwyMj
+UxNjIzNDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
 -->
