@@ -20,3 +20,7 @@ While many insects' life cycles vary greatly from one another, a wholistic inter
 
 The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **egg to adult degree days Celsius (EADDC)**.  
 
+
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMzk0MjU3NDU5XX0=
+-->
