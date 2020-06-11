@@ -22,12 +22,12 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 Understanding these key concepts in thermal ecology makes visualizing springtime insect development from the egg stage to adult emergence possible for any species with a quantified BDT and UDT. The following visualization combines the simplicity of the degree_days function with current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)). The resulting functionality of the visualization is twofold: 
 
- - *Phenopause heatmap* A colorized map displaying insect development across the United States for the selected species
- - An optional map layer of circle markers ("*Observations*") displaying where various insect species with thermal ecology data were observed 
+ - *Phenopause heatmap*- A colorized map displaying insect development across the United States for the selected species
+ - *Observations* - An optional map layer of circle markers displaying where various insect species' thermal ecology  was observed
 
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjI1MTYyMzQwLDUxMDQ2ODMzMiwzOTQyNT
-c0NTldfQ==
+eyJoaXN0b3J5IjpbLTc4NjE3NjUzNiwyMjUxNjIzNDAsNTEwND
+Y4MzMyLDM5NDI1NzQ1OV19
 -->
