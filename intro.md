@@ -37,7 +37,8 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 	*Note concerning plots*: The simplifying assumption that offspring are immediatly produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals EADDC, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. This is not the case for the phenopause heatmap, which displays phenology for one generation each year. 
 
 
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEwMjY0NTM5NDQsMTExNDMzNzQxNCwyMj
-UxNjIzNDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
+eyJoaXN0b3J5IjpbLTg0MTE0MzY5MCwxMTE0MzM3NDE0LDIyNT
+E2MjM0MCw1MTA0NjgzMzIsMzk0MjU3NDU5XX0=
 -->
