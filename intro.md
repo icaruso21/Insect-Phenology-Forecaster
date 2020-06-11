@@ -24,12 +24,12 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 
  - *Phenopause heatmap*- A colorized map displaying insect development across the United States for the selected species
 	 - User controlled options:
-		 - Species
+		 - *Species*: 
  - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances 
 	 - User controlled options:
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTc3Mzc4NjYzLDIyNTE2MjM0MCw1MTA0Nj
-gzMzIsMzk0MjU3NDU5XX0=
+eyJoaXN0b3J5IjpbLTgwMTc1NTU0NywyMjUxNjIzNDAsNTEwND
+Y4MzMyLDM5NDI1NzQ1OV19
 -->
