@@ -20,8 +20,12 @@ While many insects' life cycles vary greatly from one another, a wholistic inter
 
 The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **egg to adult degree days Celsius (EADDC)**.  
 
-Understanding these key concepts in thermal ecology makes visualizing springtime insect development from the egg stage to adult emergence possible for any species with a quantified BDT and UDT. The following visualization combines the simplicity of the degree_days function with current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)). The result is a colored map
+Understanding these key concepts in thermal ecology makes visualizing springtime insect development from the egg stage to adult emergence possible for any species with a quantified BDT and UDT. The following visualization combines the simplicity of the degree_days function with current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)). The resulting functionality of the visualization is twofold: 
+
+ - A colored map showing insect development across the United States, 
+
+
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTA2NDUzNzcyLDM5NDI1NzQ1OV19
+eyJoaXN0b3J5IjpbNTA1NDc0MjM4LDM5NDI1NzQ1OV19
 -->
