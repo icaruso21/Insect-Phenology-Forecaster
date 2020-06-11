@@ -18,10 +18,10 @@ While many insects' life cycles vary greatly from one another, a wholistic inter
    that organisms will not actually encounter this temperature was made.
    - **method** - The approximation technique used to calculate temperature throughout day. The *single.sine* method assumes the temperature curve is normally distributed around the maximum temperature. 
 
-The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **egg to adult degree days Celsius (EADDC)**.  Understanding key concepts 
+The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **egg to adult degree days Celsius (EADDC)**.  Understanding these key concepts in thermal ecology allows us to visualize levels of insect development across the 
 
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTg0NDA5NjE1LDM5NDI1NzQ1OV19
+eyJoaXN0b3J5IjpbMTQyOTYyNjUwLDM5NDI1NzQ1OV19
 -->
