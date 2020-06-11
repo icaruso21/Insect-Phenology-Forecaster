@@ -11,12 +11,12 @@ While many insects' life cycles vary greatly from one another, a wholistic inter
 
  - **BDT** (&deg;C) - The *baseline developmental threshold* is the minimum temperature required for development to occur, above which an
    organism is likely to progress forward in development. 
-  - **UDT** (&deg;C) - The *upper developmental threshold* is the upper temperature above which an organism will not be able to develop. In
+ - **UDT** (&deg;C) - The *upper developmental threshold* is the upper temperature above which an organism will not be able to develop. In
    practice, this value is likely greater than any temperature the
    species will encounter during spring development in the United
    States. Therefore, in this visualization the simplifying assumption
    that organisms will not actually encounter this temperature was made.
-   - **method** - The approximation technique used to calculate temperature throughout day. The *single.sine* method assumes the temperature curve is normally distributed around the maximum temperature. 
+  - **method** - The approximation technique used to calculate temperature throughout day. The *single.sine* method assumes the temperature curve is normally distributed around the maximum temperature. 
 
 The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **egg to adult degree days Celsius (EADDC)**.  
 
@@ -39,6 +39,7 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTg0MTE0MzY5MCwxMTE0MzM3NDE0LDIyNT
-E2MjM0MCw1MTA0NjgzMzIsMzk0MjU3NDU5XX0=
+eyJoaXN0b3J5IjpbMTc3MzY5NjM5MiwtODQxMTQzNjkwLDExMT
+QzMzc0MTQsMjI1MTYyMzQwLDUxMDQ2ODMzMiwzOTQyNTc0NTld
+fQ==
 -->
