@@ -26,12 +26,14 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 	 - User controlled options:
 		 - *Select a species*: Change the species visualized on the heatmap
 		 - *Change layer date*: Change the heatmap viewing date (From first day of this year to two days ago)
-		 - *Heatmap resolution*: Change the level of accuracy of the heatmap (
+		 - *Heatmap resolution*: Change the level of accuracy of the heatmap
+			 - Week
+			 - Day of Week- **Use with caution!** If selected can take several min
  - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances 
 	 - User controlled options:
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTMzODM2NzYzLDIyNTE2MjM0MCw1MTA0Nj
+eyJoaXN0b3J5IjpbODQ2MDc3MTAxLDIyNTE2MjM0MCw1MTA0Nj
 gzMzIsMzk0MjU3NDU5XX0=
 -->
