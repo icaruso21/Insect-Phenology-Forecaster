@@ -9,7 +9,7 @@ While many insects' life cycles vary greatly from one another, a wholistic inter
 
     TrenchR::degree_days(T_min, T_max, LDT = NA, UDT = NA, method = "single.sine")
 
- - **BDT** (&deg;C) - The *baseline developmental threshold* is the minimum temperature required for development to occur, above which an
+- **BDT** (&deg;C) - The *baseline developmental threshold* is the minimum temperature required for development to occur, above which an
    organism is likely to progress forward in development. 
 - **UDT** (&deg;C) - The *upper developmental threshold* is the upper temperature above which an organism will not be able to develop. In
    practice, this value is likely greater than any temperature the

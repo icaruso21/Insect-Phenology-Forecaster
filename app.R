@@ -187,7 +187,7 @@ degree.days.mat=function(Tmin, Tmax, LDT){
   
   # entirely above LDT
   #|| is.null(Tmin) || is.null(Tmax)
-  if(is.na(Tmin) || is.na(Tmax) || is.null(Tmin) || is.null(Tmax)){dd = NA}
+  if(is.na(Tmin) || is.na(Tmax) || is.na(Tmin) || is.na(Tmax)){dd = NA}
   else{
     if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
     
@@ -232,19 +232,27 @@ cumsum_with_reset <- function(x, threshold) {
 
 #-----Graphing Helper Functions---------
 dd_plot <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
+  print("dd_plot")
   UseMethod("dd_plot")
 }
 
 
-dd_plot.tbl_df <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
+dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
   
   #Making a new dataframe that has all of tMax1 and tMax2 for missing dates
-  if(!is.na(tMax1) && !is.na(tMax2) && !is.na(tMin1) && !is.na(tMin2)) {
+  if(!is.null(tMax1) && !is.null(tMax2) && !is.null(tMin1) && !is.null(tMin2)) {
     dfTMAX <- rbind(tMax1, tMax2[!tMax2$date %in% tMax1$date,])
     dfTMIN <- rbind(tMin1, tMin2[!tMin2$date %in% tMin1$date,])
   } else {
-    dfTMAX <- rbind(tMax1, tMax2)
-    dfTMIN <- rbind(tMin1, tMin2)
+    # dfTMAX <- rbind(tMax1, tMax2)
+    # dfTMIN <- rbind(tMin1, tMin2)
+    if(!is.null(tMax1) && !is.null(tMin1)){
+      dfTMAX <- tMax1 
+      dfTMIN <- tMin1
+    }else{
+      dfTMAX <- tMax2 
+      dfTMIN <- tMin2
+    }
   }
   #Cleaning up dates 
   dfTMAX$date <- ymd(sub('T00:00:00\\.000|T00:00:00', '', as.character(dfTMAX$date)))
@@ -298,21 +306,21 @@ dd_plot.tbl_df <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, br
   #Plot csum vs date
   ggplot(dDays, aes(date, csum)) +
     plot_template(df, breaks, dateformat) +
-    ncdc_theme() +
+    #ncdc_theme() +
     geom_hline(aes(yintercept = EADDC), linetype = "dashed", color = "green") +
-    geom_text(aes( startTime, EADDC, label = "EADDC", vjust = +1.5, hjust = -0.1), size = 3)
+    geom_text(aes( startTime, EADDC, label = "EADDC", vjust = +1.5, hjust = -0.1), size = 4)
   #scale_y_continuous(breaks = sort(c(ggplot_build(plot1)$layout$panel_ranges[[1]]$y.major_source, h)))
 }
 
 
-dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
-  stop("No method for ", class(list(tMax1)[[1]]), call. = FALSE)
-}
+# dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat = '%d/%m/%y') {
+#   stop("No method for ", class(list(tMax1)[[1]]), call. = FALSE)
+# }
 
 plot_template <- function(df, breaks, dateformat) {
   tt <- list(
-    theme_bw(base_size = 18),
-    geom_line(size = 2),
+    theme_minimal(base_size = 18),
+    geom_line(size = 1),
     labs(y = "Cumulative Degree Days", x = "Date")
   )
   if (!is.null(breaks)) {
@@ -339,17 +347,16 @@ safeSci2Com <- function(df) {
 #-----Get rasterStack of accumulated DD for current year, by week------------
 #-----Also saves copy to dat folder with name species_name.grd or end_date if no species is provided
 #--Note: degree.days.mat(tmin, tmax, BDT) must be declared prior to execution
-#Required argument: 
-#   -     start_date: a date to begin accumulation at
 #Optional arguments:
 # Note: BDT and EADDC arguments must be specified if species is not specified 
+#       - start_date: a date to begin accumulation at
 #       - end_date: a date to stop accumulation at (default: two days ago)
 #       - BDT: either an integer BDT value or a vector of values to be averaged    
 #       - EADDC: either an integer EADDC value or a vector of values to be averaged    
 #       - cum_DD: a rasterLayer containing cumulative Degree Day values on the start date
 #                 (Degree days will begin accumulating from here, otherwise they start at 0)
 #       - species: a string species name that will be queried to get mean BDT and EADDC values from ./dat/AppendixS3_SeasonalityDatabase.csv
-accumulateDD <- function(start_date, end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
+accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01')), end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
   #Define area of interest 
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
@@ -527,7 +534,8 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
-  headerPanel('Insect Phenology Visualization'),
+  includeMarkdown('intro.md'),
+  #headerPanel('Insect Phenology Visualization'),
   tabsetPanel(id = "tabset",
     tabPanel("Phenology Heatmap Controls", value = "Phen", sidebarPanel(
       selectInput(inputId = "phenoSpecies",
@@ -625,15 +633,12 @@ server <- function(input, output, session){
                     enddate = time[2],
                     limit=500,
                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-      
-      ifelse(nrow(tMax1$data)==0,
-             tMax1 <- NA,
-             tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
-      )
-      ifelse(nrow(tMax2$data)==0,
-             tMax2 <- NA,
-             tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)
-      )
+      print("tmax1")
+      print(nrow(tMax1$data))
+      if(nrow(tMax1$data)==0){tMax1 <- NULL}else{tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)}
+
+      print("tmax2")
+      if(nrow(tMax2$data)==0){tMax2 <- NULL}else{tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)}
       
       tMin1 <- ncdc(datasetid='GHCND',
                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
@@ -650,22 +655,19 @@ server <- function(input, output, session){
                     enddate = time[2],
                     limit=500,
                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+      print("tmin1")
+      if(nrow(tMin1$data)==0){tMin1 <- NULL}else{tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)}
       
-      ifelse(nrow(tMin1$data)==0,
-             tMin1 <- NA,
-             tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
-      )
-      ifelse(nrow(tMin2$data)==0,
-             tMin2 <- NA,
-             tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)
-      )
+      print("tmin2")
+      if(nrow(tMin2$data)==0){tMin2 <- NULL}else{tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)}
       
-      if(!is.na(tMax1) && !is.na(tMax2))
-      {output$predPlot <- renderPlot(
-        dd_plot(tMax1, 
-                tMax2, 
-                tMin1, 
-                tMin2,
+      
+      if((!is.null(tMax1) && !is.null(tMin1)) || (!is.null(tMax2) && !is.null(tMin2))){
+        output$predPlot <- renderPlot(
+        dd_plot(tMax1 = tMax1, 
+                tMax2 = tMax2, 
+                tMin1 = tMin1, 
+                tMin2 = tMin2, 
                 speciesStationDF$BDT.C[uid],
                 speciesStationDF$EADDC[uid],
                 time[1],
