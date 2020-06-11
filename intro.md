@@ -31,10 +31,11 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 			 - *Day of Week*: Can take several minutes to compute date specific cumulative degree days across the United States. **Use with caution!** 
  - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances 
 	 - User controls:
-		 - *Select species*: Select (or deselect) which species' observations will be displayed
+		 - *Select species*: Select (or deselect) species' whose observations will be displayed
+		 - *Date range*: The starting and endin
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ5MDkwODU2NywxMTE0MzM3NDE0LDIyNT
-E2MjM0MCw1MTA0NjgzMzIsMzk0MjU3NDU5XX0=
+eyJoaXN0b3J5IjpbLTE3Nzk1NTk5MzIsMTExNDMzNzQxNCwyMj
+UxNjIzNDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
 -->
