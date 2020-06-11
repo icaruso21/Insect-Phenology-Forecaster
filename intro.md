@@ -34,10 +34,10 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 		 - *Select species*: Select (or deselect) species' whose observations will be displayed
 		 - *Date range*: The period of time to plot accumulated degree days for, starting from 0 at the start date. (Default: first day of this year to yesterday)
 
-	*Note concerning *: The simplifying assumption that offspring are immediatly produced upon the emergence of new adults was made (allows for multiple generations per year). When accumulated degree days equals EADDC, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation.
+	*Note concerning plots*: The simplifying assumption that offspring are immediatly produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals EADDC, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. This is not the case for the phenopause heatmap, w
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyNzE3MDA5MDYsMTExNDMzNzQxNCwyMj
-UxNjIzNDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
+eyJoaXN0b3J5IjpbLTg4MzkxOTg4NSwxMTE0MzM3NDE0LDIyNT
+E2MjM0MCw1MTA0NjgzMzIsMzk0MjU3NDU5XX0=
 -->
