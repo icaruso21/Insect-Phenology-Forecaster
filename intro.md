@@ -32,10 +32,10 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
  - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances. When an observation is selected, a plot of accumulated degree days for the current date range will be displayed. 
 	 - User controls:
 		 - *Select species*: Select (or deselect) species' whose observations will be displayed
-		 - *Date range*: The period of time to plot accumulated degree days for 
+		 - *Date range*: The period of time to plot accumulated degree days for, starting from 0 at the start date. (Default: first day of this year to two days ago)
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MDk4MTI0ODYsMTExNDMzNzQxNCwyMj
+eyJoaXN0b3J5IjpbLTE5MDY4MDQxODEsMTExNDMzNzQxNCwyMj
 UxNjIzNDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
 -->
