@@ -25,6 +25,9 @@ r_packages:
   - raster
   - rasterVis
   - tidyverse
+  - hash
+  - shintcssloaders
+  - rgdal
 
 script:
     - R -f deploy.R
