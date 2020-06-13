@@ -18,58 +18,16 @@ library(tidyverse)
 library(hash)
 library(shinycssloaders)
 library(rgdal)
-remotes::install_github("mikejohnson51/AOI")
-remotes::install_github("mikejohnson51/climateR")
+# remotes::install_github("mikejohnson51/AOI")
+# remotes::install_github("mikejohnson51/climateR")
 library(AOI)
 library(climateR)
+library(waiter)
+
 
 #library(rgdal)
 #library(testit)
 #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
-#-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC/BDT values used in computation of rasterStack
-speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
-speciesBDT_Dict <- read_rds("./dat/phenoSpeciesBDT.csv")
-#Species name and corresponding filename
-availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
-
-#--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
-#----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
-updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
-  lapply(seq_along(availableSpecies), function(i){
-    #Get name and filePath values from availableSpecies list at index i
-    name <- names(availableSpecies)[[i]]
-    filePath <- availableSpecies[[i]]
-    
-    #Calculate file age (in days) after fetching the last date it was modified
-    last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
-    file_age <- as.double.difftime(Sys.Date() - last_update)
-    
-    thisYear <- format(Sys.Date(), '%Y')
-    
-    #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
-    if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
-      print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
-      
-      accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
-                   Sys.Date() - 2, 
-                   species = name)
-      
-    }else{
-      #If the file is at least a week old and we have gridMET data for this year, update it
-      if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
-      print(str_c("Updating ", name))
-      toUpdate <- raster::stack(availableSpecies[[i]])
-      accumulateDD(last_update - 2, 
-                   Sys.Date() - 2, 
-                   species = name,
-                   cum_DD = raster(toUpdate, layer = nlayers(toUpdate)))
-      return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
-    } else return(str_c(name, " was updated less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
- }})}
-
-#Execute function every time the app starts up to make sure files are up to date: 
-print(updatePhenology())
-#--------------------------------------------------------------------------------
 
 get_dfWrangled <- function(){
   #Import seasonality database
@@ -232,7 +190,6 @@ cumsum_with_reset <- function(x, threshold) {
 
 #-----Graphing Helper Functions---------
 dd_plot <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, breaks = NULL, dateformat='%d/%m/%y') {
-  print("dd_plot")
   UseMethod("dd_plot")
 }
 
@@ -358,8 +315,15 @@ safeSci2Com <- function(df) {
 #       - species: a string species name that will be queried to get mean BDT and EADDC values from ./dat/AppendixS3_SeasonalityDatabase.csv
 accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01')), end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
   #Define area of interest 
+  print(cum_DD)
+  if(!is.null(cum_DD)){
+    print("Matching start date with layer")
+    start_date <- str_replace_all(sub('.', '', last(names(cum_DD))), "[/.]", "-")
+  }
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
+  print(start_date)
+  
   if((is.null(BDT) || is.null(EADDC)) && is.null(species)){return("Please provide BDT and EADDC arguments, or a species to query")}
   if(!is.null(species)){
     toAccumulate <- get_dfWrangled() %>% filter(Species == species)
@@ -385,7 +349,6 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
   #raster::plot(AOI)
-  print(start_date)
   p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
   r = raster::stack(p$tmax, p$tmin)
   names(r) = c('tmax', 'tmin')
@@ -393,10 +356,13 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   #Initialize cum_DD to DD values for start_date
   if(is.null(cum_DD)){
     #print("initializing")
+    pastStack <- NULL
     cum_DD <- calc(r, fun = function(x){
       #print(value(x[2]))
       degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
-  }
+  }else{
+    pastStack <- cum_DD
+    cum_DD <- raster(pastStack, layer = nlayers(pastStack))}
   print(cum_DD)
   # cum_DD <- calc(r, fun = function(x){
   #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
@@ -428,8 +394,11 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
     week <- week + 1
     current_date = current_date + 1
     if(week == 7){
-      the_stack <- raster::stack(cum_DD) 
-      print(the_stack)
+      if(!is_null(pastStack)){
+        the_stack <- raster::stack(pastStack, cum_DD)
+      }else{
+      the_stack <- raster::stack(cum_DD)}
+      print(str_c("the_stack: ",the_stack))
       print(names(the_stack))
     }
     if(week == 14){
@@ -458,12 +427,14 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
       write_rds(speciesBDT_Dict, "./dat/phenoSpeciesBDT.csv")}
     #Add species to available list
     availablePhenoSpecies <- append(availablePhenoSpecies, filePath)
-    names(availablePhenoSpecies)[length(availablePhenoSpecies)] <- species
+    print(str_c("Saving species: ", species))
+    names(availablePhenoSpecies)[length(availablePhenoSpecies)] <- str_c(species)
     write_rds(availablePhenoSpecies, "./dat/availablePhenoSpecies.csv")}
   else{filePath <- str_c("./dat/", make.names(current_date), ".grd")}
   
   #Save the raster to the dat folder
-  writeRaster(the_stack, filePath, overwrite=TRUE)
+  print(str_c("Writing raster: ", the_stack))
+  saveRDS(the_stack, filePath)
   
   
   
@@ -530,6 +501,50 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
   return(cum_DD)
   #raster::plot(newR)
 }
+
+#-----Define species to visualize phenology with, locations of species' rasterStacks, and EADDC/BDT values used in computation of rasterStack
+speciesEADDC_Dict <- read_rds("./dat/phenoSpeciesEADDC.csv")
+speciesBDT_Dict <- read_rds("./dat/phenoSpeciesBDT.csv")
+#Species name and corresponding filename
+availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
+
+#--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
+#----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
+updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
+  lapply(seq_along(availableSpecies), function(i){
+    #Get name and filePath values from availableSpecies list at index i
+    name <- names(availableSpecies)[[i]]
+    filePath <- availableSpecies[[i]]
+    
+    #Calculate file age (in days) after fetching the last date it was modified
+    last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
+    file_age <- as.double.difftime(Sys.Date() - last_update)
+    
+    thisYear <- format(Sys.Date(), '%Y')
+    
+    #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
+    if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
+      print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
+      
+      accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
+                   Sys.Date() - 2, 
+                   species = name)
+      
+    }else{
+      #If the file is at least a week old and we have gridMET data for this year, update it
+      if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
+        print(str_c("Updating ", name))
+        toUpdate <- readRDS(availableSpecies[[i]])
+        accumulateDD(end_date = Sys.Date() - 2, 
+                     species = name,
+                     cum_DD = toUpdate)
+        return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
+      } else return(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
+    }})}
+
+#Execute function every time the app starts up to make sure files are up to date: 
+print(updatePhenology())
+#--------------------------------------------------------------------------------
 
 
 #-----It's the user interface! (What the user sees)-------
@@ -633,11 +648,8 @@ server <- function(input, output, session){
                     enddate = time[2],
                     limit=500,
                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-      print("tmax1")
-      print(nrow(tMax1$data))
       if(nrow(tMax1$data)==0){tMax1 <- NULL}else{tMax1 <- tMax1$data %>% dplyr::select(date, value) %>% rename(TMAX = value)}
 
-      print("tmax2")
       if(nrow(tMax2$data)==0){tMax2 <- NULL}else{tMax2 <- tMax2$data %>% dplyr::select(date, value) %>% rename(TMAX = value)}
       
       tMin1 <- ncdc(datasetid='GHCND',
@@ -655,10 +667,8 @@ server <- function(input, output, session){
                     enddate = time[2],
                     limit=500,
                     token="HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
-      print("tmin1")
       if(nrow(tMin1$data)==0){tMin1 <- NULL}else{tMin1 <- tMin1$data %>% dplyr::select(date, value) %>% rename(TMIN = value)}
       
-      print("tmin2")
       if(nrow(tMin2$data)==0){tMin2 <- NULL}else{tMin2 <- tMin2$data %>% dplyr::select(date, value) %>% rename(TMIN = value)}
       
       
@@ -722,7 +732,22 @@ server <- function(input, output, session){
     setView(lng=-98.5795, lat=39.8283, zoom=4)  
     
     dateR <- phenDate()
-
+    
+    # getLegendLabels <- function(type, ...){
+    #   switch(type, numeric = (function(cuts) {
+    #     paste0(prefix, formatNum(cuts), suffix)
+    #   })(...), bin = (function(cuts) {
+    #     n <- length(cuts)
+    #     labels <- paste0(prefix, formatNum(cuts[-n]), between, formatNum(cuts[-1]), 
+    #            suffix)
+    #   })(...), factor = (function(cuts) {
+    #     paste0(prefix, as.character(transform(cuts)), suffix)
+    #   })(...))
+    #   
+    #   print(labels)
+    #   return(labels)
+    # }
+    
     #Add the correct raster, based on dateR (the user selected date), calculating and displaying the daily raster if desired
     addSpeciesRaster <- function(speciesPhenStack, EADDC, BDT){
       updateTabsetPanel(session, "tabset", selected = "Phn")
@@ -739,6 +764,7 @@ server <- function(input, output, session){
           addLegend(pal = pal,
                     values = c(0, EADDC),
                     group = "Heatmap",
+                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
                     position = "bottomright",
                     title = "Cumulative Degree Days") #%>% 
           # addLayersControl(baseGroups = c("Heatmap", "Observations"),
@@ -758,6 +784,7 @@ server <- function(input, output, session){
         map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
           addLegend(pal = pal,
                     values = c(0, EADDC),
+                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
                     group = "Heatmap",
                     position = "bottomright",
                     title = "Cumulative Degree Days") #%>% 
@@ -773,8 +800,11 @@ server <- function(input, output, session){
           tempDate <- tempDate - 1}
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
         map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6)  %>% 
+          #Experiment here... 
           addLegend(pal = pal,
                     values = c(0, EADDC),
+                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                    labFormat = labelFormat(),
                     group = "Heatmap",
                     position = "bottomright",
                     title = "Cumulative Degree Days") #%>% 
@@ -788,7 +818,7 @@ server <- function(input, output, session){
       return(map)}
     
     #Add the species raster to the map (calls addRasterImage based on selected species and computes current day if chosen)
-    map <- addSpeciesRaster(speciesPhenStack = raster::stack(input$phenoSpecies), 
+    map <- addSpeciesRaster(speciesPhenStack = readRDS(input$phenoSpecies), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
                             BDT = speciesBDT_Dict[[input$phenoSpecies]])
     map

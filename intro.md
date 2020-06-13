@@ -1,4 +1,4 @@
-# Insect Spring Phenology
+# Spring Insect Phenology
 
 Insect life cycles provide the basis for our understanding of the developmental process of countless species. Here is a typical insect life cycle:   
 ![Insect life cycle](http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg)
