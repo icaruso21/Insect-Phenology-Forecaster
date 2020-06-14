@@ -39,7 +39,7 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTcxODEzODM4MCwtODQxMTQzNjkwLDExMT
-QzMzc0MTQsMjI1MTYyMzQwLDUxMDQ2ODMzMiwzOTQyNTc0NTld
-fQ==
+eyJoaXN0b3J5IjpbMTY5NDcxNjYxMCwxNzE4MTM4MzgwLC04ND
+ExNDM2OTAsMTExNDMzNzQxNCwyMjUxNjIzNDAsNTEwNDY4MzMy
+LDM5NDI1NzQ1OV19
 -->
