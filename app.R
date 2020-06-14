@@ -596,7 +596,8 @@ ui <- fluidPage(
     ),
   mainPanel(
     leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22")
-  ))
+  ),
+  htmlOutput(outputId = "subspecies"))
 
 
 #------Here is the server for the shiny app (How the page becomes responsive)--------
@@ -767,7 +768,7 @@ server <- function(input, output, session){
     addSpeciesRaster <- function(speciesPhenStack, EADDC, BDT){
       updateTabsetPanel(session, "tabset", selected = "Phn")
       if(is.wholenumber(EADDC)){EADDC = EADDC + 0.001}
-      pal <- colorBin(c('transparent', '#ff7729', '#ffc324', '#59711b', '#4376c7'), 
+      pal <- colorBin(c('transparent', '#4376c7', '#59711b', '#ffc324', '#ff7729'), 
                       c(0, EADDC), 
                       bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
                       na.color = "transparent")
@@ -865,6 +866,12 @@ server <- function(input, output, session){
     map
   })
   
+  observe({
+    selected_species <- names(availablePhenoSpecies)[availablePhenoSpecies == input$phenoSpecies]
+    #wp_content <- page_content("en", "wikipedia", page_name = "Codling moth")$parse
+    #output$subspecies <- renderText(wp_content$text)
+    output$subspecies <- renderText(includeMarkdown('intro.md'))
+  })
   
   #Show UI controls for selected map group
   observe({
