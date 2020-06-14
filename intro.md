@@ -1,9 +1,8 @@
 ## Codling moth (*Cydia pomonella*)
-![enter image description here](https://www.google.com/url?sa=i&url=https://en.wikipedia.org/wiki/Codling_moth&psig=AOvVaw1V6S9DPn099u5-TKopZ4lj&ust=1592262957393000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCPDW7vG3guoCFQAAAAAdAAAAABAG)
-
+![From: https://en.wikipedia.org/wiki/Codling_moth](https://upload.wikimedia.org/wikipedia/commons/8/85/Cydia_pomonella_male_dorsal.jpg)
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3NzYwMTk5OTAsMTM0NDQyNTU3NywxNz
-E4MTM4MzgwLC04NDExNDM2OTAsMTExNDMzNzQxNCwyMjUxNjIz
-NDAsNTEwNDY4MzMyLDM5NDI1NzQ1OV19
+eyJoaXN0b3J5IjpbMTczMjUyNzMyMCwxMzQ0NDI1NTc3LDE3MT
+gxMzgzODAsLTg0MTE0MzY5MCwxMTE0MzM3NDE0LDIyNTE2MjM0
+MCw1MTA0NjgzMzIsMzk0MjU3NDU5XX0=
 -->
