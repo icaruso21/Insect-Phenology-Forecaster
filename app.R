@@ -16,13 +16,18 @@ library(rasterVis)
 #library(sp)
 library(tidyverse)
 library(hash)
-library(shinycssloaders)
+#library(shinycssloaders)
 library(rgdal)
-# remotes::install_github("mikejohnson51/AOI")
-# remotes::install_github("mikejohnson51/climateR")
+library(shinytoastr)
+library(shinyalert)
+#if (!require('devtools')) install.packages('devtools')
+#devtools::install_github("mikejohnson51/AOI")
+#devtools::install_github("mikejohnson51/climateR")
+#devtools::install_github("carlganz/shinyCleave")
+#library(shinyCleave)
 library(AOI)
 library(climateR)
-library(waiter)
+
 
 
 #library(rgdal)
@@ -543,12 +548,15 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
     }})}
 
 #Execute function every time the app starts up to make sure files are up to date: 
+
 print(updatePhenology())
 #--------------------------------------------------------------------------------
 
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
+  useToastr(),
+  useShinyalert(),
   includeMarkdown('intro.md'),
   #headerPanel('Insect Phenology Visualization'),
   tabsetPanel(id = "tabset",
@@ -570,6 +578,7 @@ ui <- fluidPage(
                    selected = FALSE),
       verbatimTextOutput(outputId = "phnInf", placeholder = FALSE))),
     tabPanel("Observation Marker Plot and Controls", value = "Obs", sidebarPanel(
+      #zipInput("zipcode", "Search for a zip code: "),
       multiInput('sel_species',
                  'Select species: ',
                  choices = as.vector(unique(speciesStationDF$Species.1)),
@@ -615,6 +624,8 @@ server <- function(input, output, session){
     )
   })
   
+  #observe(print(input$zipcode))
+  
   timeRange <- reactive({
     x <- input$dateRange
   })
@@ -631,7 +642,9 @@ server <- function(input, output, session){
       updateTabsetPanel(session, "tabset", selected = "Obs")
       time <- timeRange()
       output$obsInf <- renderPrint(tryCatch(safeSci2Com(speciesStationDF$Species[uid]), 
-                                            error = function(e){return(speciesStationDF$Species[uid])}))
+                                            error = function(e){
+                                              toastr_warning("No common name detected")
+                                              return(speciesStationDF$Species[uid])}))
       
       tMax1 <- ncdc(datasetid='GHCND',
                     stationid= paste0('GHCND:', speciesStationDF$sid1[uid]),
@@ -683,7 +696,9 @@ server <- function(input, output, session){
                 time[1],
                 breaks="1 month",
                 dateformat="%m/%d"))}
-      else {output$obsInf <- renderPrint("No current RNOAA data available here.")}
+      else {
+        toastr_error("No weather data found")
+        output$obsInf <- renderPrint("No current RNOAA data available here.")}
     } else {
       output$obsInf <- renderPrint("Select an observation from the map.")
     }
@@ -698,7 +713,7 @@ server <- function(input, output, session){
   output$mymap <- renderLeaflet({
     df <- lat_long_df()
     map <- leaflet(data = df) %>%
-      addProviderTiles(providers$OpenTopoMap) %>% 
+      addProviderTiles(providers$CartoDB.Positron) %>% 
       addLayersControl(#baseGroups = c("Heatmap"),
                        overlayGroups = c("Observations"),
                        options = layersControlOptions(collapsed = FALSE, 
@@ -758,7 +773,8 @@ server <- function(input, output, session){
                       na.color = "transparent")
       
       if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
-        output$phnInf <- renderPrint("Image rendering...")
+        #output$phnInf <- renderPrint("Image rendering...")
+        toastr_info("Image rendering...")
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR))))
         map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
           addLegend(pal = pal,
@@ -773,28 +789,51 @@ server <- function(input, output, session){
                                           str_c("BDT: ", BDT),
                                           str_c("EADDC: ", EADDC),
                                           sep = "\n"))
+        toastr_success("Image rendered successfully")
       }else{
-        tempDate <- dateR
-        while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
-          tempDate <- tempDate - 1}
-        output$phnInf <- renderPrint(str_c("Accumulating from: ", tempDate))
-        toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
-        if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
-        toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
-        map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
-          addLegend(pal = pal,
-                    values = c(0, EADDC),
-                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
-                    group = "Heatmap",
-                    position = "bottomright",
-                    title = "Cumulative Degree Days") #%>% 
-          # addLayersControl(baseGroups = c("Heatmap", "Observations"),
-          #                  options = layersControlOptions(collapsed = FALSE))
-        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
-                                          str_c("BDT: ", BDT),
-                                          str_c("EADDC: ", EADDC),
-                                          sep = "\n"))
+        shinyalert(
+          title = "Caution",
+          text = "This may take several minutes. Are you sure you want to proceed?",
+          closeOnEsc = TRUE,
+          closeOnClickOutside = FALSE,
+          html = FALSE,
+          type = "warning",
+          showConfirmButton = TRUE,
+          showCancelButton = TRUE,
+          confirmButtonText = "Proceed",
+          confirmButtonCol = "#AEDEF4",
+          cancelButtonText = "Cancel",
+          timer = 0,
+          imageUrl = "",
+          animation = TRUE, 
+          callbackR = function(x){if(x != FALSE){
+            toastr_warning("Computing image...", timeOut = 20000)
+            tempDate <- dateR
+            while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+              tempDate <- tempDate - 1}
+            output$phnInf <- renderPrint(str_c("Accumulating from: ", tempDate))
+            toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
+            if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
+            toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
+            map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
+              addLegend(pal = pal,
+                        values = c(0, EADDC),
+                        # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                        group = "Heatmap",
+                        position = "bottomright",
+                        title = "Cumulative Degree Days") #%>% 
+            # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+            #                  options = layersControlOptions(collapsed = FALSE))
+            output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
+                                              str_c("BDT: ", BDT),
+                                              str_c("EADDC: ", EADDC),
+                                              sep = "\n"))
+            toastr_success("Image computed successfully")
+          }else{
+            updateRadioButtons(session, "computeDD", selected = FALSE)
+            }})
       }}else{
+        toastr_info("Image rendering...")
         tempDate <- dateR
         while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
@@ -808,35 +847,37 @@ server <- function(input, output, session){
                     group = "Heatmap",
                     position = "bottomright",
                     title = "Cumulative Degree Days") #%>% 
-          # addLayersControl(baseGroups = c("Heatmap", "Observations"),
-          #                  options = layersControlOptions(collapsed = FALSE))
+        # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+        #                  options = layersControlOptions(collapsed = FALSE))
         output$phnInf <- renderText(paste(str_c("Current heatmap date: ", tempDate), 
                                           str_c("BDT: ", BDT),
                                           str_c("EADDC: ", EADDC),
                                           sep = "\n"))
+        toastr_success("Image rendered successfully")
+        
       }
       return(map)}
     
     #Add the species raster to the map (calls addRasterImage based on selected species and computes current day if chosen)
-    map <- addSpeciesRaster(speciesPhenStack = readRDS(input$phenoSpecies), 
+    map <- addSpeciesRaster(speciesPhenStack = raster::stack(readRDS(input$phenoSpecies)), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
                             BDT = speciesBDT_Dict[[input$phenoSpecies]])
     map
   })
   
-
+  
   #Show UI controls for selected map group
   observe({
     selected_group <- req(input$mymap_groups)
     
     if("Observations" %in% selected_group){
       # if(match("Heatmap", selected_group)){
-        showTab("tabset", "Obs")
-        # showTab("tabset", "Phen")
+      showTab("tabset", "Obs")
+      # showTab("tabset", "Phen")
       # }else{
-        # hideTab("tabset", "Phen")
-        # showTab("tabset", "Obs")
-      }else{hideTab("tabset", "Obs")}
+      # hideTab("tabset", "Phen")
+      # showTab("tabset", "Obs")
+    }else{hideTab("tabset", "Obs")}
     # }else if(selected_group == "Heatmap"){
     #   hideTab("tabset", "Obs")
     #   showTab("tabset", "Phen")}
