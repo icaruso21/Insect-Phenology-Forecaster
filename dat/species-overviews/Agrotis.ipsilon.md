@@ -1,8 +1,7 @@
-## Codling moth (*Agrotis ipsilon*)
-![From: https://en.wikipedia.org/wiki/Codling_moth](https://upload.wikimedia.org/wikipedia/commons/8/85/Cydia_pomonella_male_dorsal.jpg)
-
+## Black cutworm (*Agrotis ipsilon*)
+![From: https://en.wikipedia.org/wiki/Agrotis_ipsilon](https://upload.wikimedia.org/wikipedia/commons/c/c3/Agrotis_ipsilon_aneituma.jpg)
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTYwODAxODE1MF19
+eyJoaXN0b3J5IjpbLTE1OTU2ODI2MDIsLTYwODAxODE1MF19
 -->
