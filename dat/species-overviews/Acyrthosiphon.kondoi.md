@@ -1,7 +1,6 @@
-## Codling moth (*Acyrthosiphon kondoi*)
-![From: https://en.wikipedia.org/wiki/Codling_moth](https://upload.wikimedia.org/wikipedia/commons/8/85/Cydia_pomonella_male_dorsal.jpg)
-
+## Blue alfalfa aphid (*Acyrthosiphon kondoi*)
+![From: ](https://www.nbair.res.in/Databases/Aphids/images/Acyrthosiphonkondoi/Acyrthosiphonkondoi.jpg)
 More text to come!
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMzExNzQ0NDQ2XX0=
+eyJoaXN0b3J5IjpbNzk3OTIyOTY3LDMxMTc0NDQ0Nl19
 -->
