@@ -1,3 +1,8 @@
+
+h2 {
+    margin: 0;
+}
+
 <img 
 title="https://www.nbair.res.in/Databases/Aphids/Acyrthosiphon-kondoi.php"
 src="https://www.nbair.res.in/Databases/Aphids/images/Acyrthosiphonkondoi/Acyrthosiphonkondoi.jpg" 
@@ -11,6 +16,6 @@ align="right">
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODc4NzQ0MDM1LDIwOTI2Mzc3NTgsMzExNz
-Q0NDQ2XX0=
+eyJoaXN0b3J5IjpbLTE1NjgyMDQ5MDQsODc4NzQ0MDM1LDIwOT
+I2Mzc3NTgsMzExNzQ0NDQ2XX0=
 -->
