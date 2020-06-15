@@ -1,5 +1,5 @@
 <style>
-h1 {
+h1, h2, h3, h4, h5, h6 {
     margin: 0;
 }
 </style>
@@ -16,6 +16,6 @@ align="right">
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTk1ODY5MzI3NiwtMTU2ODIwNDkwNCw4Nz
+eyJoaXN0b3J5IjpbMTM5MTc1OTUyNCwtMTU2ODIwNDkwNCw4Nz
 g3NDQwMzUsMjA5MjYzNzc1OCwzMTE3NDQ0NDZdfQ==
 -->
