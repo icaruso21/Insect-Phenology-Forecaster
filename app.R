@@ -601,7 +601,9 @@ ui <- fluidPage(
         leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22")
       )),
     hr(),
-    htmlOutput(outputId = "subspecies")
+    htmlOutput(outputId = "subspecies"),
+    br(),
+    hr()
   )
   )
 
