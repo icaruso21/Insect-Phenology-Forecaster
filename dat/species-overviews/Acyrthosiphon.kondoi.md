@@ -8,9 +8,8 @@ align="right">
 ## Blue alfalfa aphid<br><sup>*Acyrthosiphon kondoi*</sup>
 
 More text to come!
-
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTM5Njk1NTcyOSwtMjA5MzExMTY0MywtNT
-g5MDU5MjQ1LC0xNTY4MjA0OTA0LDg3ODc0NDAzNSwyMDkyNjM3
-NzU4LDMxMTc0NDQ0Nl19
+eyJoaXN0b3J5IjpbLTkxODcyOTI3OSwtMzk2OTU1NzI5LC0yMD
+kzMTExNjQzLC01ODkwNTkyNDUsLTE1NjgyMDQ5MDQsODc4NzQ0
+MDM1LDIwOTI2Mzc3NTgsMzExNzQ0NDQ2XX0=
 -->
