@@ -5,11 +5,11 @@ height="200"
 class="center"
 align="right">
 
-## Khapra beetle (*Trogoderma granarium*)
+## Khapra beetle <br><sup>*Trogoderma granarium*</br>
 
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTg5MDkzMzUwOSwxNDcyNDgzMTgsNTc0OT
-Y4Njk3LDExMjU4OTk4MTAsLTMzMTY0MTg2Nl19
+eyJoaXN0b3J5IjpbNzk5NzQ1NDM1LDE0NzI0ODMxOCw1NzQ5Nj
+g2OTcsMTEyNTg5OTgxMCwtMzMxNjQxODY2XX0=
 -->
