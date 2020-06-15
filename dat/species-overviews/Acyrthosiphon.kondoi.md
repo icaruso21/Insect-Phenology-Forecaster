@@ -5,12 +5,12 @@ height="200"
 class="center"
 align="right">
 
-### Blue alfalfa aphid (*Acyrthosiphon kondoi*)
-<hr>
+### Blue alfalfa aphid 
+#### *Acyrthosiphon kondoi*
 
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTk4MjU3NTIxMiwyMDkyNjM3NzU4LDMxMT
-c0NDQ0Nl19
+eyJoaXN0b3J5IjpbODc4NzQ0MDM1LDIwOTI2Mzc3NTgsMzExNz
+Q0NDQ2XX0=
 -->
