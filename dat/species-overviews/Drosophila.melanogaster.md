@@ -5,11 +5,11 @@ height="200"
 class="center"
 align="right">
 
-## Common fruit fly (*Drosophila melanogaster*)
+## Common fruit fly <br><sup>*Drosophila melanogaster*</sup>
 
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTAyNjE5NTcxLC0yMDMyNDYyOTMzLDkyMj
-AyMTYzNl19
+eyJoaXN0b3J5IjpbLTE1OTAxNDg0MjEsLTIwMzI0NjI5MzMsOT
+IyMDIxNjM2XX0=
 -->
