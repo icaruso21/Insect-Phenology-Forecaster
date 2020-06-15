@@ -1,7 +1,13 @@
 ## Black cutworm (*Agrotis ipsilon*)
-![From: https://en.wikipedia.org/wiki/Agrotis_ipsilon](https://upload.wikimedia.org/wikipedia/commons/c/c3/Agrotis_ipsilon_aneituma.jpg)
+
+<img 
+title="https://en.wikipedia.org/wiki/Agrotis_ipsilon"
+src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Agrotis_ipsilon_aneituma.jpg" 
+height="200"
+class="center"
+align="right">
 More text to come!
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE1OTU2ODI2MDIsLTYwODAxODE1MF19
+eyJoaXN0b3J5IjpbLTEwNDk4MDAzOTEsLTYwODAxODE1MF19
 -->
