@@ -5,10 +5,10 @@ height="200"
 class="center"
 align="right">
 
-## Codling moth <br><sup>*Cydia pomonella*)</sup>
+## Codling moth <br><sup>*Cydia pomonella*</sup>
 
 More text to come!
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTA4NjQ3NDIzMCwtMTQxMjI2ODE5NywtMj
-ExNDkzMTE2Miw1NDUwMjkzODJdfQ==
+eyJoaXN0b3J5IjpbLTE3NjQ5ODIyNjUsMTA4NjQ3NDIzMCwtMT
+QxMjI2ODE5NywtMjExNDkzMTE2Miw1NDUwMjkzODJdfQ==
 -->
