@@ -4,13 +4,12 @@ src="https://upload.wikimedia.org/wikipedia/commons/2/20/Acyrthosiphon_pisum_%28
 height="200"
 class="center"
 align="right">
-## Pea aphid (*Acyrthosiphon pisum*)
 
-
+## Pea aphid <br><sup>*Acyrthosiphon pisum*</sup>
 
 More text to come! 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE4NzYxMDUwNDksMTUwMDI2MTMzMywtMz
-IwOTI1NTRdfQ==
+eyJoaXN0b3J5IjpbMTU5OTQ0MTk0OSwxNTAwMjYxMzMzLC0zMj
+A5MjU1NF19
 -->
