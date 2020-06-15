@@ -557,47 +557,53 @@ print(updatePhenology())
 ui <- fluidPage(
   useToastr(),
   useShinyalert(),
-  includeMarkdown('intro.md'),
-  #headerPanel('Insect Phenology Visualization'),
-  tabsetPanel(id = "tabset",
-    tabPanel("Phenology Heatmap Controls", value = "Phen", sidebarPanel(
-      selectInput(inputId = "phenoSpecies",
-                  label = "Select a species",
-                  choices = availablePhenoSpecies,
-                  multiple = FALSE,
-                  selectize = TRUE),
-      dateInput(inputId = "phenoDate", 
-                label = "Change layer date: ",
-                value  = Sys.Date()-2,
-                min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
-                format = "mm/dd/yy"),
-      radioButtons(inputId = "computeDD",
-                   label = "Heatmap resolution (May take a few minutes to compute if changed)",
-                   choiceNames = c("Day of Week (Up to 2 days ago)", "Week"),
-                   choiceValues = c(TRUE, FALSE),
-                   selected = FALSE),
-      verbatimTextOutput(outputId = "phnInf", placeholder = FALSE))),
-    tabPanel("Observation Marker Plot and Controls", value = "Obs", sidebarPanel(
-      #zipInput("zipcode", "Search for a zip code: "),
-      multiInput('sel_species',
-                 'Select species: ',
-                 choices = as.vector(unique(speciesStationDF$Species.1)),
-                 selected = unique(speciesStationDF$Species.1)),
-      actionButton("all", "All"),
-      actionButton("none", "None"),
-      dateRangeInput(inputId = "dateRange", 
-                     label = "Change date range for plot: ",
-                     start  = "2020-01-01",
-                     min    = "1900-01-01",
-                     format = "mm/dd/yy",
-                     separator = " - "),
-      verbatimTextOutput(outputId = "obsInf", placeholder = FALSE) %>% withSpinner(color = "#228B22"),
-      plotOutput("predPlot", height = 300)))
-    ),
-  mainPanel(
-    leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22")
-  ),
-  htmlOutput(outputId = "subspecies"))
+  verticalLayout(
+    includeMarkdown('intro.md'),
+    hr(),
+    #headerPanel('Insect Phenology Visualization'),
+    sidebarLayout(
+      tabsetPanel(id = "tabset",
+                  tabPanel("Phenology Heatmap Controls", value = "Phen", sidebarPanel(
+                    selectInput(inputId = "phenoSpecies",
+                                label = "Select a species",
+                                choices = availablePhenoSpecies,
+                                multiple = FALSE,
+                                selectize = TRUE),
+                    dateInput(inputId = "phenoDate", 
+                              label = "Change layer date: ",
+                              value  = Sys.Date()-2,
+                              min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
+                              format = "mm/dd/yy"),
+                    radioButtons(inputId = "computeDD",
+                                 label = "Heatmap resolution (May take a few minutes to compute if changed)",
+                                 choiceNames = c("Day of Week (Up to 2 days ago)", "Week"),
+                                 choiceValues = c(TRUE, FALSE),
+                                 selected = FALSE),
+                    verbatimTextOutput(outputId = "phnInf", placeholder = FALSE))),
+                  tabPanel("Observation Marker Plot and Controls", value = "Obs", sidebarPanel(
+                    #zipInput("zipcode", "Search for a zip code: "),
+                    multiInput('sel_species',
+                               'Select species: ',
+                               choices = as.vector(unique(speciesStationDF$Species.1)),
+                               selected = unique(speciesStationDF$Species.1)),
+                    actionButton("all", "All"),
+                    actionButton("none", "None"),
+                    dateRangeInput(inputId = "dateRange", 
+                                   label = "Change date range for plot: ",
+                                   start  = "2020-01-01",
+                                   min    = "1900-01-01",
+                                   format = "mm/dd/yy",
+                                   separator = " - "),
+                    verbatimTextOutput(outputId = "obsInf", placeholder = FALSE) %>% withSpinner(color = "#228B22"),
+                    plotOutput("predPlot", height = 300)))
+      ),
+      mainPanel(
+        leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22")
+      )),
+    hr(),
+    htmlOutput(outputId = "subspecies")
+  )
+  )
 
 
 #------Here is the server for the shiny app (How the page becomes responsive)--------
@@ -866,11 +872,13 @@ server <- function(input, output, session){
     map
   })
   
+  #Render text about selected species
   observe({
     selected_species <- names(availablePhenoSpecies)[availablePhenoSpecies == input$phenoSpecies]
+    filepath <- str_c("./dat/species-overviews/", make.names(selected_species), ".md")
     #wp_content <- page_content("en", "wikipedia", page_name = "Codling moth")$parse
     #output$subspecies <- renderText(wp_content$text)
-    output$subspecies <- renderText(includeMarkdown('intro.md'))
+    output$subspecies <- renderText(includeMarkdown(filepath))
   })
   
   #Show UI controls for selected map group
