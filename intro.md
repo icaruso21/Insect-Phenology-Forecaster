@@ -1,10 +1,9 @@
 # Spring Insect Phenology
 
 Insect life cycles provide the basis for our understanding of the developmental process of countless species. Here is a typical insect life cycle:   
-![Insect life cycle](http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg)
-<p  align="center"><img title="https://en.wikipedia.org/wiki/Khapra_beetle"
+<p  align="center"><img title="http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg"
 src="http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg" 
-height="200"
+height="400"
 class="center"></p>
 While many insects' life cycles vary greatly from one another, a wholistic interpretation of this life cycle allows for intriguing developmental comparisons to be made between insect species. This visualization will interpret the insect developmental process, specifically **spring phenology**, as a period of time from the insect's egg stage to its emergence as an adult, encompassing other, distinct intermediate stages. 
 
@@ -42,8 +41,8 @@ Understanding these key concepts in thermal ecology makes visualizing springtime
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzU4Mjg0Njk3LDE2OTQ3MTY2MTAsNTQ1MD
-I5MzgyLDEzNDQ0MjU1NzcsMTcxODEzODM4MCwtODQxMTQzNjkw
-LDExMTQzMzc0MTQsMjI1MTYyMzQwLDUxMDQ2ODMzMiwzOTQyNT
-c0NTldfQ==
+eyJoaXN0b3J5IjpbLTEyODA5ODYxMjcsMTY5NDcxNjYxMCw1ND
+UwMjkzODIsMTM0NDQyNTU3NywxNzE4MTM4MzgwLC04NDExNDM2
+OTAsMTExNDMzNzQxNCwyMjUxNjIzNDAsNTEwNDY4MzMyLDM5ND
+I1NzQ1OV19
 -->
