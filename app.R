@@ -1,36 +1,21 @@
-library(shiny)
-library(leaflet)
-#library(dplyr)
-#library(tidyr)
-library(mosaic)
-library(rnoaa)
-library(shinyWidgets)
-#library(ggplot2)
-library(lubridate)
-#library(leafpop)
-library(taxize)
-#library(rgeos)
-#library(sf)
-library(raster)
-library(rasterVis)
-#library(sp)
-library(tidyverse)
-library(hash)
-library(shinycssloaders)
-library(rgdal)
-library(shinytoastr)
-library(shinyalert)
-library(plotly)
-library(shinyglide)
-#if (!require('devtools')) install.packages('devtools')
-#devtools::install_github("mikejohnson51/AOI")
-#devtools::install_github("mikejohnson51/climateR")
-#devtools::install_github("carlganz/shinyCleave")
-#devtools::install_github("dreamRs/shinypop")
-library(shinypop)
-library(shinyCleave)
-library(AOI)
-library(climateR)
+#Just importing packages from CRAN
+cranbraries <- c('shiny', 'leaflet', 'mosaic', 'rnoaa', 'shinyWidgets', 
+                 'lubridate', 'taxize', 'raster', 'rasterVis', 'tidyverse', 
+                 'hash', 'shinycssloaders', 'rgdal', 'shinytoastr', 'shinyalert',
+                 'plotly', 'shinyglide', 'cicerone', 'glouton')
+lapply(cranbraries, library, character.only = TRUE)
+
+
+#Now importing packages from Github
+# gitlibs_repos <- c('dreamRs/shinypop', 'carlganz/shinyCleave', 'mikejohnson51/AOI', 'mikejohnson51/climateR', 'ColinFay/glouton')
+# lapply(gitlibs_repos, devtools::install_github)
+gitlibs_names <- c('shinypop', 'shinyCleave', 'AOI', 'climateR', 'glouton')
+lapply(gitlibs_names, library, character.only = TRUE)
+
+js <- "$(document).on('shiny:connected', function(event) {
+  Shiny.onInputChange('loaded', true)
+});"
+
 
 ##Change this if you want the heatmap to automatically update every week.
 autoUpdateHeatmap = FALSE
@@ -629,56 +614,154 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
 if(autoUpdateHeatmap) print(updatePhenology())
 #--------------------------------------------------------------------------------
 
+#----------Guided walkthrough------------------
+guide <- Cicerone$
+  new(allow_close = TRUE)$
+  step(
+    "viz-wrapper",
+    "Visualization Tool",
+    "Welcome to our insect phenology visualization tool. There are many ways you can interact with our model. Click next to get started!"
+  )$
+  step(
+    "mymap",
+    "The Phenopause Heatmap",
+    "The colored layer on the map represents current insect development in the US. 
+    For more information on how we modeled this check out the introduction above. Now, let's continue to see what the layer is actually displaying."
+  )$
+  step(
+    "heatmap-species-wrapper",
+    "Selecting a species",
+    "This tells you what species is currently depicted on the heatmap. Viewing a different species' heatmap is as simple as selecting it here."
+  )$
+  step(
+    "heatmap-date-wrapper",
+    "Changing the date",
+    "Visualizing the development of your selected species at a different date (this year), can easily be accomplished here."
+  )$
+  step(
+    "phnInf",
+    "Heatmap layer info",
+    "Here we see the values of the two ecological parameters used in the modeling of this species' springtime phenology. 
+    We also see the current date of the layer being displayed. You may notice that the date is not the date you selected in the last step. More info on that next."
+  )$
+  step(
+    "heatmap-resolution-wrapper",
+    "Heatmap date accuracy",
+    "The colors displayed on the map are computed weekly, and a record of each week is stored for quick viewing. 
+    By default, when a date is selected the data that is displayed is that of the closest available weekly data. 
+    If you are after greater modeling accuracy, changing this will recalculate heatmap values to the day."
+  )$
+  step(
+    "subspecies",
+    "Species descriptions",
+    "A description of the current species can be found here. 
+    Now, let's continue to learn about plotting phenology data for over 650 insect species."
+  )$
+  step(
+    "mymap",
+    "Species observation markers",
+    "Our thermal ecology dataset currently contains 1,493 observations of 678 unique insect species. 
+    Let's explore it! First, select the 'Observations' layer checkbox in the top-right corner of the map.
+    Each appearing blue marker represents a location where an insect species was observed. 
+    Click a blue marker to see the species' name and its unique thermal parameters, experimentally determined by researchers at that location."
+
+  )$
+  step(
+    "observation-filter-wrapper",
+    "Adding and removing markers",
+    "You can use the tool in this tab to control which species have visible observation markers. Now, continue to view the phenology plot for our selected observation."
+  )$
+  step(
+    "observation-plot-wrapper",
+    "Species observation plots",
+    "Woah, a new tab appeared! This is the current insect development plot for your selected insect observation. 
+    We use weather data from stations in the GHCND network near the location where the insect was observed in conjunction with observed thermal parameters (BDT and EADDC).
+    The result is a plot depicting accumulated degree days (a proxy for development) as well as individual degree days, which is summed to produce accumulated degree days.
+    An insect is expected to reach adulthood when accumulated degree days equals their experimentally determined EADDC threshold (red line). 
+    Green lines mark the beginning of a new generation, and the assumption was made that this happens immediately after a species reaches adulthood."
+  )$
+  step(
+    "observation-dates-wrapper",
+    "Changing the date range",
+    "This date range field makes it simple to change the x-axis date range. 
+    Degree days are summed from the beginning of the date range, which defaults to January 1st of this year (winter in the Northern Hemisphere)."
+  )$
+  step(
+    "plotting-assistant-wrapper",
+    "Phenology plotting tool",
+    "Congratulations, you're ready to start using our visualization. As a final note, I'd like to highlight our new phenology plotting tool. 
+    It makes visualizing the current, local development of any species in our database simple for any United States zipcode. "
+  )
+#---------------------------------------------
+
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
   useToastr(),
   useShinyalert(),
+  use_glouton(),
+  use_cicerone(),
+  tags$script(js),
   tags$head(tags$style(".modal-dialog{ width:80%}")),
   verticalLayout(
     includeMarkdown('intro.md'),
-    hr(),
-    p("New Feature: The phenology plotting tool provides a current/historical spring phenology plot for an insect species of your choice at a desired location (USA only), give it a try: "),
-    actionBttn("miniPlotter", "Phenology Plotting Assistant", style = "fill", color = "primary"),
-    p(""),
-    hr(),
+    div(
+      id = "plotting-assistant-wrapper",
+      hr(),
+      p("New Feature: The phenology plotting tool provides a current/historical spring phenology plot for an insect species of your choice at a desired location (USA only), give it a try: "),
+      actionBttn("miniPlotter", "Phenology Plotting Assistant", style = "fill", color = "primary"),
+      p(""),
+      hr()),
+    includeMarkdown('intro2.md'),
     #headerPanel('Insect Phenology Visualization'),
-    sidebarLayout(
+    div(
+      id = "viz-wrapper",
+      sidebarLayout(
       tabsetPanel(id = "tabset",
                   tabPanel("Phenology Heatmap Controls", value = "Phen", sidebarPanel(
-                    tags$b("Select a species"),
-                    helpText("Change the species shown on the heatmap."),
-                    selectInput(inputId = "phenoSpecies",
+                    div(
+                      id = "heatmap-species-wrapper",
+                      tags$b("Select a species"),
+                      helpText("Change the species shown on the heatmap."),
+                      selectInput(inputId = "phenoSpecies",
+                                  label = NULL,
+                                  choices = availablePhenoSpecies,
+                                  multiple = FALSE,
+                                  selectize = TRUE)),
+                    div(
+                      id = "heatmap-date-wrapper",
+                      tags$b("Change heatmap date"),
+                      helpText("Change the date shown on the heatmap, up to two days ago. The map depicts accumulated degree days from the first day of this year until this date."),
+                      dateInput(inputId = "phenoDate", 
                                 label = NULL,
-                                choices = availablePhenoSpecies,
-                                multiple = FALSE,
-                                selectize = TRUE),
-                    tags$b("Change heatmap date"),
-                    helpText("Change the date shown on the heatmap, up to two days ago. The map depicts accumulated degree days from the first day of this year until this date."),
-                    dateInput(inputId = "phenoDate", 
-                              label = NULL,
-                              value  = Sys.Date()-2,
-                              min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
-                              max = Sys.Date()-2,
-                              format = "mm/dd/yy"),
-                    tags$b("Alter heatmap resolution (Caution)"),
-                    helpText("Change the accuracy of the heatmap. This may take several minutes to load if changed. 'Weekly' (default) will accumulate degree days to within a week of the selected date, while 'Day of Week' accumulates to the day."),
-                    radioButtons(inputId = "computeDD",
-                                 label = NULL,
-                                 choiceNames = c("Day of Week", "Week"),
-                                 choiceValues = c(TRUE, FALSE),
-                                 selected = FALSE),
+                                value  = Sys.Date()-2,
+                                min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
+                                max = Sys.Date()-2,
+                                format = "mm/dd/yy")),
                     verbatimTextOutput(outputId = "phnInf", placeholder = FALSE),
-                    helpText("More information about the species in this heatmap is available in the 'Heatmap Species Info' tab below."))),
+                    div(
+                      id = "heatmap-resolution-wrapper",
+                      tags$b("Advanced: Alter heatmap resolution"),
+                      helpText("Change the accuracy of the heatmap. This may take several minutes to load if changed. 'Week' (default) will accumulate degree days to within a week of the selected date, while 'Day of Week' accumulates to the day."),
+                      radioButtons(inputId = "computeDD",
+                                   label = NULL,
+                                   choiceNames = c("Day of Week", "Week"),
+                                   choiceValues = c(TRUE, FALSE),
+                                   selected = FALSE)),
+                    helpText("More information about the species in this heatmap is available in the 'Heatmap Species Info' tab below."),
+                    tags$b("If you're stuck... "),
+                    actionBttn("tour", "Take a Tour!", style = "float", color = "primary", block = TRUE))),
                   tabPanel("Filter species observation markers", value = "Obs", sidebarPanel(
-                    tags$b('Add or remove species observation markers from the map'),
-                    helpText("Click on a species to add or remove its corresponding observation marker from the map. All records are visible by default."),
-                    multiInput('sel_species',
-                               NULL,
-                               choices = as.vector(unique(dfWrangled$Species)),
-                               selected = unique(dfWrangled$Species)),
-                    actionButton("all", "All"),
-                    actionButton("none", "None"),
+                    div(
+                      id = "observation-filter-wrapper",
+                      tags$b('Add or remove species observation markers from the map'),
+                      helpText("Click on a species to add or remove its corresponding observation marker from the map. All records are visible by default."),
+                      multiInput('sel_species',
+                                 NULL,
+                                 choices = as.vector(unique(dfWrangled$Species)),
+                                 selected = unique(dfWrangled$Species)),
+                      actionButton("all", "All"),
+                      actionButton("none", "None"))
                     #actionBttn("miniPlotter", "Phenology Plotting Assistant", style = "fill", color = "primary"),
                     # dateRangeInput(inputId = "dateRange", 
                     #                label = "Change date range for plot: ",
@@ -691,7 +774,7 @@ ui <- fluidPage(
       mainPanel(
         leafletOutput("mymap", height = 600) %>% withSpinner(color = "#228B22"),
         helpText("Map markers from the toggleable species 'Observations' layer can be clicked. When selected, a phenology plot is rendered in the 'Observation Plot' tab below.")
-      )),
+      ))),
     hr(),
     tabsetPanel(id = "tabsetSupport", 
                 tabPanel(title = "Heatmap Species Info", 
@@ -699,22 +782,67 @@ ui <- fluidPage(
                          htmlOutput(outputId = "subspecies")),
                 tabPanel(title = "Observation Plot", 
                          value = "Obs2",
-                         helpText("If the plot is not loaded, click a marker on the map to load that species' phenology plot below."),
-                         dateRangeInput(inputId = "dateRange", 
-                                        label = "Change x-axis date range: ",
-                                        start  = floor_date(Sys.Date(), "year"),
-                                        min    = "1970-01-01",
-                                        format = "mm/dd/yy",
-                                        separator = " - "),
-                         plotlyOutput("predPlot") %>% withSpinner(color = "#228B22"),
-                         textOutput("obsPltInf"))),
+                         div(
+                           id = "observation-plot-wrapper",
+                           helpText("If the plot is not loaded, click a marker on the map to load that species' phenology plot below."),
+                           plotlyOutput("predPlot") %>% withSpinner(color = "#228B22"),
+                           textOutput("obsPltInf"),
+                           div(
+                             id = "observation-dates-wrapper",
+                             dateRangeInput(inputId = "dateRange", 
+                                            label = "Change x-axis date range: ",
+                                            start  = floor_date(Sys.Date(), "year"),
+                                            min    = "1970-01-01",
+                                            format = "mm/dd/yy",
+                                            separator = " - ")),
+                           helpText("Note: To plot springtime phenology for an observation located in the Southern Hemisphere, change the starting date to 6/1. This makes visualizing Southern Hemisphere springtime development possible, and is needed due to differences in the timing of spring.")))), 
     br(),
     hr()
   )
 )
 
+
+
 #------Here is the server for the shiny app (How the page becomes responsive)--------
 server <- function(input, output, session){
+  
+  #If its your first time on the website, we offer you a guided walkthrough (use cookies to check)
+  observeEvent(input$loaded, {
+    # get cookie
+    visited <- fetch_cookies()
+    print(visited$visited_site)
+    
+    #Uncomment next line to debug new user welcome alert
+    #visited$visited_site <- NULL
+    
+    # if null set cookie
+    # otherwise show guide
+    if(is.null(visited$visited_site)){
+      add_cookie("visited_site", "yes")
+      shinyalert(
+        title = "Welcome!",
+        text = "Welcome to the Trench Project's springtime insect phenology visualization tool. It looks like this is your first visit, would you like a walkthrough of the tool? ",
+        closeOnEsc = TRUE,
+        closeOnClickOutside = FALSE,
+        html = FALSE,
+        type = "",
+        showConfirmButton = TRUE,
+        showCancelButton = TRUE,
+        confirmButtonText = "Take the Tour!",
+        confirmButtonCol = "#AEDEF4",
+        cancelButtonText = "No Thanks!",
+        timer = 0,
+        imageUrl = "https://www.festivalclaca.cat/imgfv/b/537-5374275_bee-insect-drawing-flying-wings-isolated-honeybee-free.png",
+        imageWidth = 100,
+        imageHeight = 100,
+        animation = TRUE, 
+        callbackR = function(x){if(x != FALSE){guide$init()$start()}})
+    }
+    
+  })
+  
+  observeEvent(input$tour, guide$init()$start())
+  
   
   #Create a reactive dataframe which changes based on the selected species from the multi input tool
   lat_long_df <- reactive({
@@ -864,6 +992,7 @@ server <- function(input, output, session){
                        overlayGroups = c("Observations"),
                        options = layersControlOptions(collapsed = FALSE, 
                                                       autoZIndex = TRUE)) %>% 
+      hideGroup("Observations") %>% 
       addCircleMarkers(lng = ~lon,
                        lat = ~lat,
                        radius = 2.5,
@@ -885,6 +1014,7 @@ server <- function(input, output, session){
       #            width = 300,
       #            height = 400))) %>% 
     setView(lng=-98.5795, lat=39.8283, zoom=4)  
+    
     
     dateR <- phenDate()
     
@@ -1173,7 +1303,7 @@ server <- function(input, output, session){
                        min    = "1970-01-01",
                        format = "mm/dd/yy",
                        separator = " - "),
-        actionButton("goButton", "Find weather in date range for zip code!"),
+        actionButton("goButton", "Find weather in date range for zip code and update plot!"),
         verbatimTextOutput('zipWeather'),
         verbatimTextOutput("zipAdvice")
         ),
