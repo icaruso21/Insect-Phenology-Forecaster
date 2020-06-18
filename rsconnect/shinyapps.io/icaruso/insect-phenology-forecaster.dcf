@@ -5,9 +5,9 @@ account: icaruso
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2326810
-bundleId: 3264015
+bundleId: 3285346
 url: https://icaruso.shinyapps.io/insect-phenology-forecaster/
-when: 1592014572.30418
+when: 1592444986.90814
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .travis.yml|deploy.R|DESCRIPTION
