@@ -7,9 +7,12 @@ align="right">
 
 ## Khapra beetle <br><sup>*Trogoderma granarium*</sup>
 
-More text to come!
+The khapra beetle is one of the most concerning pests of stored
+
+More information about this species (management, life-cycle, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/urban/beetles/khapra_beetle.htm). The information in this description also comes from [here](http://entnemdept.ufl.edu/creatures/urban/beetles/khapra_beetle.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyMTQ3MjAyNDEsMTQ3MjQ4MzE4LDU3ND
-k2ODY5NywxMTI1ODk5ODEwLC0zMzE2NDE4NjZdfQ==
+eyJoaXN0b3J5IjpbMzAzMTEyNDgwLC0xMjE0NzIwMjQxLDE0Nz
+I0ODMxOCw1NzQ5Njg2OTcsMTEyNTg5OTgxMCwtMzMxNjQxODY2
+XX0=
 -->
