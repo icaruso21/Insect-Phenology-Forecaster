@@ -11,9 +11,9 @@ The pea aphid is a model aphid for genomic research found in temperate climates 
 
 The life cycle of the pea aphid is **holocyclic**-- overwintering eggs hatch in the spring, followed by multiple asexually reproducing generations from spring to early autum when, in response to a decreasing **photoperiod** (day length) sexually reproducing males and females are spawned to lay durable overwintering eggs. In warmer climates bearing sufficient resources (_e.g._ many regions in the Southern US), adult _A. pisum_ are able to continue asexual reproduction during the winter months.
 
-More information about this species (distribution, life-cycle, etc.) can be found [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm). The information in this description comes from [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm).
+More information about this species (distribution, life-cycle, etc.) can be found [here](https://www.geochembio.com/metapathogen/aphid/#:~:text=In%20the%20holocyclic%20life%20cycle,which%20are%20very%20cold%20hardy.). The information in this description also comes from [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTExMzcwOTU4LDE1OTk0NDE5NDksMTUwMD
-I2MTMzMywtMzIwOTI1NTRdfQ==
+eyJoaXN0b3J5IjpbLTE5ODg2MDgxNDIsNTExMzcwOTU4LDE1OT
+k0NDE5NDksMTUwMDI2MTMzMywtMzIwOTI1NTRdfQ==
 -->
