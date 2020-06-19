@@ -9,9 +9,9 @@ align="right">
 
 More text to come!
 
-More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information, and much of the text also comes from  [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
+More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information, and much of the text also comes from [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTYyMDY1NjM1LDEwNzcwMDgyMDUsLTYxNz
-I5Njk1MV19
+eyJoaXN0b3J5IjpbLTQ4MDk3MTU1OSwxMDc3MDA4MjA1LC02MT
+cyOTY5NTFdfQ==
 -->
