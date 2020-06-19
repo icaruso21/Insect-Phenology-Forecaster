@@ -7,11 +7,11 @@ align="right">
 
 ## Pea aphid <br><sup>*Acyrthosiphon pisum*</sup>
 
-The pea aphid is a model aphid species found in temperate climates worldwide. It feeds on nearly 20 genera in the family Fabacea, and notably is a major pest of peas and alfalfa. _A. pisum_ was the first basal hemimetabolous with a sequenced genome.
+The pea aphid is a model aphid species found in temperate climates worldwide. It feeds on nearly 20 genera in the family Fabacea, and notably is a major pest of peas and alfalfa. _A. pisum_ was the [first basal hemimetabolous](https://www.uniprot.org/proteomes/UP000007819) with a sequenced genome.
 
 More information about this species (distribution, life-cycle, etc.) can be found [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm). The information in this description comes from [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQxNTg5NzQxMSwxNTk5NDQxOTQ5LDE1MD
-AyNjEzMzMsLTMyMDkyNTU0XX0=
+eyJoaXN0b3J5IjpbLTE5NjIzMTUxOTksMTU5OTQ0MTk0OSwxNT
+AwMjYxMzMzLC0zMjA5MjU1NF19
 -->
