@@ -7,13 +7,13 @@ align="right">
 
 ## Blue alfalfa aphid<br><sup>*Acyrthosiphon kondoi*</sup>
 
-More text to come!
+Since its introduction to the United States in the late 1970s
 
 More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information in this description comes from [here](https://www.plantwise.org/KnowledgeBank/datasheet/3145).
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMjc5NDU3MjQsLTkxODcyOTI3OSwtMzk2OT
-U1NzI5LC0yMDkzMTExNjQzLC01ODkwNTkyNDUsLTE1NjgyMDQ5
-MDQsODc4NzQ0MDM1LDIwOTI2Mzc3NTgsMzExNzQ0NDQ2XX0=
+eyJoaXN0b3J5IjpbMzU0MDU3NTY3LC05MTg3MjkyNzksLTM5Nj
+k1NTcyOSwtMjA5MzExMTY0MywtNTg5MDU5MjQ1LC0xNTY4MjA0
+OTA0LDg3ODc0NDAzNSwyMDkyNjM3NzU4LDMxMTc0NDQ0Nl19
 -->
