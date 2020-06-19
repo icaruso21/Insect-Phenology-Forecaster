@@ -21,8 +21,8 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyODA5ODYxMjcsMTY5NDcxNjYxMCw1ND
-UwMjkzODIsMTM0NDQyNTU3NywxNzE4MTM4MzgwLC04NDExNDM2
-OTAsMTExNDMzNzQxNCwyMjUxNjIzNDAsNTEwNDY4MzMyLDM5ND
-I1NzQ1OV19
+eyJoaXN0b3J5IjpbOTkzOTM0ODAzLC0xMjgwOTg2MTI3LDE2OT
+Q3MTY2MTAsNTQ1MDI5MzgyLDEzNDQ0MjU1NzcsMTcxODEzODM4
+MCwtODQxMTQzNjkwLDExMTQzMzc0MTQsMjI1MTYyMzQwLDUxMD
+Q2ODMzMiwzOTQyNTc0NTldfQ==
 -->
