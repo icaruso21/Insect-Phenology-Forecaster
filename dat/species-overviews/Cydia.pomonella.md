@@ -11,9 +11,9 @@ The codling moth is a widespread pest species found in nearly all temperate pome
 
 Females lay eggs on fruits, stems, or leaves of hosts. Larvae tunnel into fruit to feed on the seeds. Larval damage to fruit is characterized by entry and exit holes, rot that surrounds larval feeding areas, and frass accumulation. Mature larvae exit the fruit and create a cocoon under tree bark or in leaf litter; **overwintering occurs as a prepupa**.
 
-More information about this species (distribution, life-cycle, etc.) can be found [here](https://www.cabi.org/isc/datasheet/11396). The information, and much of the text in this description comes from [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
+More information about this species (distribution, life-cycle, etc.) can be found [here](https://www.cabi.org/isc/datasheet/11396). The information in this description comes from [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3NjgyODIwMzQsLTU0OTg0Njc2NCwxMD
-g2NDc0MjMwLC0xNDEyMjY4MTk3LC0yMTE0OTMxMTYyLDU0NTAy
-OTM4Ml19
+eyJoaXN0b3J5IjpbNDYyMzI0NjM5LC0xNzY4MjgyMDM0LC01ND
+k4NDY3NjQsMTA4NjQ3NDIzMCwtMTQxMjI2ODE5NywtMjExNDkz
+MTE2Miw1NDUwMjkzODJdfQ==
 -->
