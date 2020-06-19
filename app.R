@@ -1,16 +1,49 @@
 #Just importing packages from CRAN
-cranbraries <- c('shiny', 'leaflet', 'mosaic', 'rnoaa', 'shinyWidgets', 
-                 'lubridate', 'taxize', 'raster', 'rasterVis', 'tidyverse', 
-                 'hash', 'shinycssloaders', 'rgdal', 'shinytoastr', 'shinyalert',
-                 'plotly', 'shinyglide', 'cicerone', 'glouton')
-lapply(cranbraries, library, character.only = TRUE)
+library(shiny)
+library(leaflet)
+library(mosaic)
+library(rnoaa)
+library(shinyWidgets)
+library(lubridate)
+#library(leafpop)
+library(taxize)
+library(raster)
+library(rasterVis)
+library(tidyverse)
+library(hash)
+library(shinycssloaders)
+library(rgdal)
+library(shinytoastr)
+library(shinyalert)
+library(plotly)
+library(shinyglide)
+library(cicerone)
+#if (!require('devtools')) install.packages('devtools')
+#devtools::install_github("mikejohnson51/AOI")
+#devtools::install_github("mikejohnson51/climateR")
+#devtools::install_github("carlganz/shinyCleave")
+#devtools::install_github("dreamRs/shinypop")
+#devtools::install_github("JohnCoene/shinyscroll")
 
+library(shinypop)
+library(shinyCleave)
+library(AOI)
+library(climateR)
+library(glouton)
+library(shinyscroll)
 
-#Now importing packages from Github
+# cranbraries <- c('shiny', 'leaflet', 'mosaic', 'rnoaa', 'shinyWidgets',
+#                  'lubridate', 'taxize', 'raster', 'rasterVis', 'tidyverse',
+#                  'hash', 'shinycssloaders', 'rgdal', 'shinytoastr', 'shinyalert',
+#                  'plotly', 'shinyglide', 'cicerone')
+# lapply(cranbraries, library, character.only = TRUE)
+# 
+# 
+# #Now importing packages from Github
 # gitlibs_repos <- c('dreamRs/shinypop', 'carlganz/shinyCleave', 'mikejohnson51/AOI', 'mikejohnson51/climateR', 'ColinFay/glouton')
 # lapply(gitlibs_repos, devtools::install_github)
-gitlibs_names <- c('shinypop', 'shinyCleave', 'AOI', 'climateR', 'glouton')
-lapply(gitlibs_names, library, character.only = TRUE)
+# gitlibs_names <- c('shinypop', 'shinyCleave', 'AOI', 'climateR', 'glouton')
+# lapply(gitlibs_names, library, character.only = TRUE)
 
 js <- "$(document).on('shiny:connected', function(event) {
   Shiny.onInputChange('loaded', true)
@@ -701,17 +734,27 @@ ui <- fluidPage(
   useShinyalert(),
   use_glouton(),
   use_cicerone(),
+  use_shinyscroll(),
   tags$script(js),
   tags$head(tags$style(".modal-dialog{ width:80%}")),
   verticalLayout(
-    includeMarkdown('intro.md'),
+    h1("Spring Insect Phenology"),
+    hr(),
+    div(
+      id="scroll-button-wrapper",
+      align="left",
+      p("If you're not one for an introduction, feel free to skip to the visualization tool."),
+      actionBttn("scroll", "Insect Phenology Visualization", size = "sm", style = "fill", color = "primary")),
     div(
       id = "plotting-assistant-wrapper",
       hr(),
-      p("New Feature: The phenology plotting tool provides a current/historical spring phenology plot for an insect species of your choice at a desired location (USA only), give it a try: "),
-      actionBttn("miniPlotter", "Phenology Plotting Assistant", style = "fill", color = "primary"),
+      p("New Tool! Our new phenology plotting feature allows you to interactively produce a current/historical spring phenology plot for an insect species of your choice using weather data automatically collected in your favorite US zipcode."),
+      actionBttn("miniPlotter", "Phenology Plotting Tool", size = "sm", style = "fill", color = "primary"),
       p(""),
       hr()),
+    includeMarkdown('intro3.md'),
+    #hr(),
+    includeMarkdown('intro.md'),
     includeMarkdown('intro2.md'),
     #headerPanel('Insect Phenology Visualization'),
     div(
@@ -750,7 +793,7 @@ ui <- fluidPage(
                                    selected = FALSE)),
                     helpText("More information about the species in this heatmap is available in the 'Heatmap Species Info' tab below."),
                     tags$b("If you're stuck... "),
-                    actionBttn("tour", "Take a Tour!", style = "float", color = "primary", block = TRUE))),
+                    actionBttn("tour", "Take a Tour!", size = "sm", style = "float", color = "primary", block = TRUE))),
                   tabPanel("Filter species observation markers", value = "Obs", sidebarPanel(
                     div(
                       id = "observation-filter-wrapper",
@@ -821,9 +864,9 @@ server <- function(input, output, session){
       add_cookie("visited_site", "yes")
       shinyalert(
         title = "Welcome!",
-        text = "Welcome to the Trench Project's springtime insect phenology visualization tool. It looks like this is your first visit, would you like a walkthrough of the tool? ",
+        text = "Welcome to the Trench Project's springtime insect phenology visualization tool. It looks like this is your first visit, shall we go on a walkthrough of the tool?",
         closeOnEsc = TRUE,
-        closeOnClickOutside = FALSE,
+        closeOnClickOutside = TRUE,
         html = FALSE,
         type = "",
         showConfirmButton = TRUE,
@@ -843,6 +886,10 @@ server <- function(input, output, session){
   
   observeEvent(input$tour, guide$init()$start())
   
+  observeEvent(input$scroll, {
+    scroll("viz-wrapper") # scroll to plot
+    runif(100)
+  })
   
   #Create a reactive dataframe which changes based on the selected species from the multi input tool
   lat_long_df <- reactive({
@@ -929,6 +976,7 @@ server <- function(input, output, session){
     click<-input$mymap_marker_click
     uid <- click$id
     if(!is.null(uid)){
+      toastr_info("Fetching weather data and plotting, please wait.", progressBar = TRUE, timeOut = 7500)
       updateTabsetPanel(session, "tabset", selected = "Obs")
       updateTabsetPanel(session, "tabsetSupport", selected = "Obs2")
       
@@ -954,6 +1002,7 @@ server <- function(input, output, session){
       #speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesStationDF$sid1==""), ]
       
       if((!is.null(weather$tMax1) && !is.null(weather$tMin1)) || (!is.null(weather$tMax2) && !is.null(weather$tMin2))){
+        toastr_success(str_c("Weather data found for ", dfWrangled$Species[uid], " in ", dfWrangled$Location[uid]), timeOut = 8000)
         output$predPlot <- renderPlotly({
         dd_plot(tMax1 = weather$tMax1, 
                 tMax2 = weather$tMax2, 
@@ -968,6 +1017,7 @@ server <- function(input, output, session){
                 lon = dfWrangled$lon[uid],
                 breaks="1 month",
                 dateformat="%m/%y")})
+        toastr_success("Phenology plot loaded below map", "Plot Ready", timeOut = 8000)
         output$obsPltInf <- renderText(str_c("Source of thermal data for ", dfWrangled$Species[uid], ": ", dfWrangled$Author[uid], ", ", dfWrangled$Year[uid], ", ", dfWrangled$Journal[uid]))}
       else {
         toastr_error("No weather data found", "Error Plotting", timeOut = 10000)
@@ -1058,8 +1108,8 @@ server <- function(input, output, session){
           # addLayersControl(baseGroups = c("Heatmap", "Observations"),
           #                  options = layersControlOptions(collapsed = FALSE))
         output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
-                                          str_c("BDT: ", BDT),
-                                          str_c("EADDC: ", EADDC),
+                                          str_c("BDT: ", round(BDT, digits=2)),
+                                          str_c("EADDC: ", round(EADDC, digits=2)),
                                           sep = "\n"))
         toastr_success("Heatmap layer rendered successfully")
       }else{
@@ -1097,8 +1147,8 @@ server <- function(input, output, session){
             # addLayersControl(baseGroups = c("Heatmap", "Observations"),
             #                  options = layersControlOptions(collapsed = FALSE))
             output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
-                                              str_c("BDT: ", BDT),
-                                              str_c("EADDC: ", EADDC),
+                                              str_c("BDT: ", round(BDT, digits=2)),
+                                              str_c("EADDC: ", round(EADDC, digits=2)),
                                               sep = "\n"))
             toastr_success("Image computed successfully")
           }else{
@@ -1122,8 +1172,8 @@ server <- function(input, output, session){
         # addLayersControl(baseGroups = c("Heatmap", "Observations"),
         #                  options = layersControlOptions(collapsed = FALSE))
         output$phnInf <- renderText(paste(str_c("Current heatmap date: ", tempDate), 
-                                          str_c("BDT: ", BDT),
-                                          str_c("EADDC: ", EADDC),
+                                          str_c("BDT: ", round(BDT, digits=2)),
+                                          str_c("EADDC: ", round(EADDC, digits=2)),
                                           sep = "\n"))
         toastr_success("Heatmap rendered successfully")
         
