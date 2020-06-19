@@ -7,8 +7,10 @@ align="right">
 
 ## Codling moth <br><sup>*Cydia pomonella*</sup>
 
-More information about this species can be found [here](https://www.cabi.org/isc/datasheet/11396) 
+
+
+More information about this species can be found at the [here](https://www.cabi.org/isc/datasheet/11396), at the source of this description.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbOTk1ODY5NjMxLDEwODY0NzQyMzAsLTE0MT
-IyNjgxOTcsLTIxMTQ5MzExNjIsNTQ1MDI5MzgyXX0=
+eyJoaXN0b3J5IjpbMTIyNjQ4NjkzMywxMDg2NDc0MjMwLC0xND
+EyMjY4MTk3LC0yMTE0OTMxMTYyLDU0NTAyOTM4Ml19
 -->
