@@ -7,8 +7,8 @@ align="right">
 
 ## Codling moth <br><sup>*Cydia pomonella*</sup>
 
-More text to come!
+[More information](https://www.cabi.org/isc/datasheet/11396)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE3NjQ5ODIyNjUsMTA4NjQ3NDIzMCwtMT
+eyJoaXN0b3J5IjpbLTE2NDg4Nzc2NDEsMTA4NjQ3NDIzMCwtMT
 QxMjI2ODE5NywtMjExNDkzMTE2Miw1NDUwMjkzODJdfQ==
 -->
