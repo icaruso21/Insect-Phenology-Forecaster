@@ -7,13 +7,13 @@ align="right">
 
 ## Pea aphid <br><sup>*Acyrthosiphon pisum*</sup>
 
-The pea aphid is a model aphid species for genomic research found in temperate climates worldwide. It feeds on nearly 20 genera in the family Fabacea, and notably is a major pest of peas, clovers, and alfalfa. _A. pisum_ was the [first basal hemimetabolous](https://www.uniprot.org/proteomes/UP000007819) with a sequenced genome.
+The pea aphid is a model aphid for genomic research found in temperate climates worldwide. It feeds on nearly 20 genera in the family Fabacea, and notably is a major pest of peas, clovers, and alfalfa. _A. pisum_ was the [first basal hemimetabolous](https://www.uniprot.org/proteomes/UP000007819) with a sequenced genome.
 
 The life cycle of the pea aphid is **holocyclic**-- overwintering eggs hatch in the spring, followed by multiple asexually reproducing generations from spring to early autum when, in response to a decreasing **photoperiod** (day length) sexually reproducing males and females are spawned to lay durable overwintering eggs. In warmer climates bearing sufficient resources (_e.g._ many regions in the Southern US), adult _A. pisum_ are able to continue asexual reproduction during the winter months.
 
 More information about this species (distribution, life-cycle, etc.) can be found [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm). The information in this description comes from [here](https://influentialpoints.com/Gallery/Acyrthosiphon_pisum_Pea_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzU1MjQwNzU0LDE1OTk0NDE5NDksMTUwMD
+eyJoaXN0b3J5IjpbNTExMzcwOTU4LDE1OTk0NDE5NDksMTUwMD
 I2MTMzMywtMzIwOTI1NTRdfQ==
 -->
