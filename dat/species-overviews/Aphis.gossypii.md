@@ -9,8 +9,9 @@ align="right">
 
 More text to come!
 
-More information about this species (distribution, life-cycle, etc.) can be found [here](https://www.cabi.org/isc/datasheet/11396). The information, and much of the text in this description comes from [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
+More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information, and much of the text also comes from  [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwMzQ0NjQ5NCwxMDc3MDA4MjA1LC02MT
-cyOTY5NTFdfQ==
+eyJoaXN0b3J5IjpbOTYyMDY1NjM1LDEwNzcwMDgyMDUsLTYxNz
+I5Njk1MV19
 -->
