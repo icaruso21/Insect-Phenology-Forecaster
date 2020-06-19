@@ -7,11 +7,11 @@ align="right">
 
 ## Black cutworm <br><sup>*Agrotis ipsilon*</sup>
 
-The black cutworm has a wide feeding range, it is a pest of many economically important grains including corn, and nearly all vegetables. While the black cutworm is absent from some tropical
+The black cutworm has a wide feeding range, it is a pest of many economically important grains including corn, and nearly all vegetables. While the black cutworm is absent from some tropical and colder areas, it is found in many regions of the world including much of the United States and canad
 
 More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information and much of the text also comes from [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNjkxNjQzOTgzLC0yMDgyNzUzNzI0LDE0Nz
-k4NzcwNTksLTYwODAxODE1MF19
+eyJoaXN0b3J5IjpbLTExNDQ0NTg0MzIsLTIwODI3NTM3MjQsMT
+Q3OTg3NzA1OSwtNjA4MDE4MTUwXX0=
 -->
