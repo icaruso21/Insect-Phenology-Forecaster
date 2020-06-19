@@ -11,8 +11,8 @@ The codling moth is a widespread pest species commonly found in North America.
 
 Fruits are known to carry this pest in trade/transport.
 
-More information about this species (distribution, life-cycle, etccan be found at the [here](https://www.cabi.org/isc/datasheet/11396), at the source of this description.
+More information about this species (distribution, life-cycle, etc.) can be found [here](https://www.cabi.org/isc/datasheet/11396). The information in this description comes from [here](https://idtools.org/id/leps/tortai/Cydia_pomonella.htm).
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQ3OTc5MDUyMywxMDg2NDc0MjMwLC0xND
+eyJoaXN0b3J5IjpbMTMwODg0MDc2MCwxMDg2NDc0MjMwLC0xND
 EyMjY4MTk3LC0yMTE0OTMxMTYyLDU0NTAyOTM4Ml19
 -->
