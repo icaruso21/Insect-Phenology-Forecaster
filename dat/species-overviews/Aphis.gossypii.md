@@ -7,11 +7,10 @@ align="right">
 
 ## Cotton aphid <br><sup>*Aphis gossypii*</sup>
 
-More text to come!
-
+Melon aphids have been observed in many tropical and temperate regions around the world. In the United States, it is most commonly a nuisance in the southeast and so
 More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information, and much of the text also comes from [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ4MDk3MTU1OSwxMDc3MDA4MjA1LC02MT
-cyOTY5NTFdfQ==
+eyJoaXN0b3J5IjpbLTE5MzIyMDA2NzcsMTA3NzAwODIwNSwtNj
+E3Mjk2OTUxXX0=
 -->
