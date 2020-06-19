@@ -11,12 +11,12 @@ The black cutworm has a wide feeding range, it is a pest of many economically im
 
 Overwintering occurs in the pupal stage in most places, while larvae in Florda often continue development year round. [It has been demonstrated](https://esajournals.onlinelibrary.wiley.com/doi/10.2307/1939583) that under suitable conditions adult moths of this species can travel up to 1000 km in 2-4 days within the continental US. In North America, the northernmost area pupae have been understood to overwinter is [Tennessee](http://entnemdept.ufl.edu/creatures/veg/black_cutworm.htm); however, once hatched the wind assisted migration of adults who then lay offspring, causes new pupal development in colder areas farther north. 
 
-Black cutworm larvae are capable of consuming over 400 sq cm of foliage during development. 
+Black cutworm larvae are capable of consuming over 400 sq cm of foliage during development, doing considerable damage to crops and killing nascent plants. 
 
 More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information and much of the text also comes from [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQyMDczNTYxOCwtMjExMzcxMzk4MSwxNj
+eyJoaXN0b3J5IjpbLTcyMjAyMTgyNCwtMjExMzcxMzk4MSwxNj
 E3OTgzMTM3LDE4NDQ1MDUwMTksLTIwODI3NTM3MjQsMTQ3OTg3
 NzA1OSwtNjA4MDE4MTUwXX0=
 -->
