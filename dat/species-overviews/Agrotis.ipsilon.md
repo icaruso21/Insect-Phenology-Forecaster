@@ -9,11 +9,11 @@ align="right">
 
 The black cutworm,  _Agrotis ipsilon_, has a wide host range, feeding on nearly all vegetables and many important grains, particularly corn.
 
-The black cutworm has a wide feeding range, including many essential  
+The black cutworm has a wide feeding range, it is a pest of many economically important grains including corn, as well as 
 
 More information about this species (life-cycle, management, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm). The information and much of the text also comes from [here](http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTcxMjYwNTkwNywxNDc5ODc3MDU5LC02MD
+eyJoaXN0b3J5IjpbLTM3NDE0MzAxMywxNDc5ODc3MDU5LC02MD
 gwMTgxNTBdfQ==
 -->
