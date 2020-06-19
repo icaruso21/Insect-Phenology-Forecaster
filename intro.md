@@ -8,7 +8,7 @@ While many insects' life cycles vary greatly, a wholistic interpretation of this
 
 - **T<sub>0</sub>** (&deg;C) - The *baseline developmental threshold* is the minimum temperature required for development to occur, above which an
    organism is likely to progress forward in development. 
-- **T<sub>up</sub>** (&deg;C) - The *upper developmental threshold* is the upper temperature above which an organism will not be able to develop. In
+- **T<sub>upper</sub>** (&deg;C) - The *upper developmental threshold* is the upper temperature above which an organism will not be able to develop. In
    practice, this value is likely greater than any temperature the
    species will encounter during spring development in the United
    States. Therefore, in this visualization the simplifying assumption
@@ -21,9 +21,9 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM1NDgwOTI5OSw5Mzk1OTM0NDUsOTU3Nz
-Q4MTI1LC0xMjgwOTg2MTI3LDE2OTQ3MTY2MTAsNTQ1MDI5Mzgy
-LDEzNDQ0MjU1NzcsMTcxODEzODM4MCwtODQxMTQzNjkwLDExMT
-QzMzc0MTQsMjI1MTYyMzQwLDUxMDQ2ODMzMiwzOTQyNTc0NTld
-fQ==
+eyJoaXN0b3J5IjpbLTU5ODcyOTc0OCwxMzU0ODA5Mjk5LDkzOT
+U5MzQ0NSw5NTc3NDgxMjUsLTEyODA5ODYxMjcsMTY5NDcxNjYx
+MCw1NDUwMjkzODIsMTM0NDQyNTU3NywxNzE4MTM4MzgwLC04ND
+ExNDM2OTAsMTExNDMzNzQxNCwyMjUxNjIzNDAsNTEwNDY4MzMy
+LDM5NDI1NzQ1OV19
 -->
