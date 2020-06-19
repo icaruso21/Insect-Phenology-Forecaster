@@ -7,12 +7,12 @@ align="right">
 
 ## Common fruit fly <br><sup>*Drosophila melanogaster*</sup>
 
-_D. melanogaster_ is a damaging pest for many types of fruit
+_D. melanogaster_ is a damaging pest of many fruits, acting as a vector for many organisms causing sour rot. In the summer, its life cycle is only 7 to 8 days and adults often lay 700 to 800 eggs every 25 days. 
 
 More information about this species (management, life-cycle, etc.) can be found [here](http://ipm.ucanr.edu/PMG/r302301611.html). The information in this description also comes from [here](http://ipm.ucanr.edu/PMG/r302301611.html).
 
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTEyODA3NjcyOTAsLTE1OTAxNDg0MjEsLT
-IwMzI0NjI5MzMsOTIyMDIxNjM2XX0=
+eyJoaXN0b3J5IjpbNTMzOTczOTQxLC0xNTkwMTQ4NDIxLC0yMD
+MyNDYyOTMzLDkyMjAyMTYzNl19
 -->
