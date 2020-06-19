@@ -10,5 +10,5 @@ src="http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg"
 height="400"
 class="center"></p>
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTExNDA1Nzc5Nl19
+eyJoaXN0b3J5IjpbNjIxMjg0MzY4LDExMTQwNTc3OTZdfQ==
 -->
