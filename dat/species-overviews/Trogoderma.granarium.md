@@ -7,12 +7,12 @@ align="right">
 
 ## Khapra beetle <br><sup>*Trogoderma granarium*</sup>
 
-The khapra beetle is one of the most concerning stored-product pests in the world. It is difficult to control _T. granarium_ infestations due in large part to the beetle's ability to survive extended periods without food and moisture. They are also known for their resistance to insecticides and fumigants, as the beetle frequently resides in small, inaccessible crevices for long periods of time. There are currently no ongoing infestat
+The khapra beetle is one of the most concerning stored-product pests in the world. It is difficult to control _T. granarium_ infestations due in large part to the beetle's ability to survive extended periods without food and moisture. They are also known for their resistance to insecticides and fumigants, as the beetle frequently resides in small, inaccessible crevices for long periods of time. There are currently no ongoing infestations in the United States, but they have been found in California in the 1950s and are considered one of the worst invasive species in the world.
 
 More information about this species (management, life-cycle, etc.) can be found [here](http://entnemdept.ufl.edu/creatures/urban/beetles/khapra_beetle.htm). The information in this description also comes from [here](http://entnemdept.ufl.edu/creatures/urban/beetles/khapra_beetle.htm).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ5NzEwNzEzNywtMTIxNDcyMDI0MSwxND
-cyNDgzMTgsNTc0OTY4Njk3LDExMjU4OTk4MTAsLTMzMTY0MTg2
-Nl19
+eyJoaXN0b3J5IjpbLTE3NDcwOTExNTIsLTEyMTQ3MjAyNDEsMT
+Q3MjQ4MzE4LDU3NDk2ODY5NywxMTI1ODk5ODEwLC0zMzE2NDE4
+NjZdfQ==
 -->
