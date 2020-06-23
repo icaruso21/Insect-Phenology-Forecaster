@@ -4,7 +4,7 @@ While many insects' life cycles vary greatly, a wholistic interpretation of this
 
 **Growing degree days (GDD)** are one metric ecologists can use to understand spring phenology in insects. In other words, insects can be thought of as reaching adulthood after they have accumulated a sufficient amount of thermal energy for their emergence to occur. At first glance, this method may seem overly general, as it is well understood that thermal tolerances vary greatly between species. However, incorporating [previously collected data](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper) on individual species' developmental temperature thresholds allows for the calculation of GDDs for a target species. The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (**T_min**) and maxima (**T_max**) to calculate the GDDs accumulated in a 24 hour period:
 
-    TrenchR::degree_days(T_min, T_max, LDT = NA, UDT = NA, method = "single.sine")
+    TrenchR::degree_days(T_min, T_max, T_0 = NA, T_upper = NA, method = "single.sine")
 
 - **T<sub>0</sub>** (&deg;C) - The *baseline developmental threshold* is the minimum temperature required for development to occur, above which an
    organism is likely to progress forward in development. 

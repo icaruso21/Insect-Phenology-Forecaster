@@ -51,7 +51,7 @@ js <- "$(document).on('shiny:connected', function(event) {
 
 
 ##Change this if you want the heatmap to automatically update every week.
-autoUpdateHeatmap = FALSE
+autoUpdateHeatmap = TRUE
 
 #library(rgdal)
 #library(testit)
@@ -194,21 +194,23 @@ degree.days.mat=function(Tmin, Tmax, LDT){
 }
 
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
-cumsum_with_reset <- function(x, threshold) {
+cumsum_with_reset <- function(x, threshold, gen_gap) {
   cumsum <- 0
   group <- 1
   result <- numeric()
+  pause <- 0
   
   for (i in 1:length(x)) {
-    if (cumsum == threshold){
+    if (pause == gen_gap){
       group <- group + 1
       cumsum <- 0
     }
     
     cumsum <- cumsum + x[i]
     
-    if (cumsum > threshold) {
+    if (cumsum >= threshold) {
       cumsum <- threshold
+      pause <- pause + 1
     }
     
     result = c(result, cumsum)
@@ -227,11 +229,12 @@ dd_plot <- function(tMax1, tMax2,
                     lat = NULL, lon = NULL, 
                     breaks = NULL, 
                     dateformat='%m/%y',
-                    locality = NULL) {
+                    locality = NULL,
+                    gen_gap = 1) {
   UseMethod("dd_plot")
 }
 
-dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, endTime, species, lat = NULL, lon = NULL, breaks = NULL, dateformat='%m/%y', locality = NULL) {
+dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, endTime, species, lat = NULL, lon = NULL, breaks = NULL, dateformat='%m/%y', locality = NULL, gen_gap = 1) {
   
   #Making a new dataframe that has all of tMax1 and tMax2 for missing dates
   if(!is.null(tMax1) && !is.null(tMax2) && !is.null(tMin1) && !is.null(tMin2)) {
@@ -283,7 +286,7 @@ dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, e
 
   dDays <- dfTEMP
   #Adding a csum column which sums degree days and resets after reaching threshold (EADDC)
-  dDays$csum <- cumsum_with_reset(dDays$dd, EADDC)
+  dDays$csum <- cumsum_with_reset(dDays$dd, EADDC, gen_gap)
   
   #Plot csum vs date
   # plot <-  ggplot(dDays, aes(date, csum)) +
@@ -326,7 +329,7 @@ dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, e
                    xend = endTime, 
                    y = EADDC, 
                    yend = EADDC, 
-                   name = "EADDC",
+                   name = "G",
                    line = list(dash = "dash"))}
   
   #Beautify and add date selectors
@@ -422,28 +425,28 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
   print(start_date)
   
-  if((is.null(BDT) || is.null(EADDC)) && is.null(species)){return("Please provide BDT and EADDC arguments, or a species to query")}
+  if((is.null(BDT) || is.null(EADDC)) && is.null(species)){return("Please provide T0 and G arguments, or a species to query")}
   if(!is.null(species)){
     toAccumulate <- get_dfWrangled() %>% filter(Species == species)
     print(str_c("Species selected: ", species))
-    print("BDT Values Found: ")
+    print("T0 Values Found: ")
     print(toAccumulate$BDT.C)
     BDT <- mean(toAccumulate$BDT.C)
-    print(str_c("Average BDT: ", BDT))
-    print("EADDC Values Found: ")
+    print(str_c("Average T0: ", BDT))
+    print("G Values Found: ")
     print(toAccumulate$EADDC)
     EADDC <- mean(toAccumulate$EADDC)
-    print(str_c("Average EADDC: ", EADDC))}
+    print(str_c("Average G: ", EADDC))}
   #Find means of BDT and EADDC if vector of either is passed in
   if(length(BDT) > 1){
-    print(str_c("Averaging BDTs: ", BDT))
+    print(str_c("Averaging T0s: ", BDT))
     BDT <- mean(BDT)
-    print(str_c("Average BDT: ", BDT))}
+    print(str_c("Average T0: ", BDT))}
   if(length(EADDC) > 1){
-    print(str_c("Averaging EADDCs: ", EADDC))
+    print(str_c("Averaging G: ", EADDC))
     EADDC <- mean(EADDC)
-    print(str_c("Average EADDC: ", EADDC))}
-  print(str_c("BDT: ", BDT, ", EADDC: ", EADDC))
+    print(str_c("Average G: ", EADDC))}
+  print(str_c("T0: ", BDT, ", G: ", EADDC))
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
   #raster::plot(AOI)
@@ -532,11 +535,13 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   
   #Save the raster to the dat folder
   print(str_c("Writing raster: ", the_stack))
-  saveRDS(the_stack, filePath)
+  #saveRDS(the_stack, filePath)
   
+  hold_brick <- tempfile(fileext = ".grd")
+  writeRaster(the_stack, filename = hold_brick)
+  writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
   
-  
-  return(the_stack)
+  return(brick(hold_brick))
   #raster::plot(newR)
 }
 
@@ -551,7 +556,7 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
   #Get temp raster stack for start_date
   #raster::plot(AOI)
   print(str_c("Accumulating degree days starting at " , start_date, " until ", end_date, "..."))
-  print(str_c("BDT: ", BDT, ", EADDC: ", EADDC))
+  print(str_c("T0: ", BDT, ", G: ", EADDC))
   
   p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
   r = raster::stack(p$tmax, p$tmin)
@@ -609,38 +614,45 @@ availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 #--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
 #----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
 updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
+  max_updates <- 1 
   lapply(seq_along(availableSpecies), function(i){
     #Get name and filePath values from availableSpecies list at index i
-    name <- names(availableSpecies)[[i]]
-    filePath <- availableSpecies[[i]]
-    toUpdate <- readRDS(availableSpecies[[i]])
-    last_update <- as.Date(str_replace_all(sub('.', '', last(names(toUpdate))), "[/.]", "-"))
-    currentDay <- Sys.Date() -2
-    #Calculate file age (in days) after fetching the last date it was modified
-    #last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
-    print(last_update)
-    file_age <- as.double.difftime(currentDay - last_update)
-    
-    thisYear <- format(Sys.Date(), '%Y')
-    
-    #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
-    if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
-      print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
+    if(max_updates != 0){
+      #print("triggered")
+      # print(max_updates)
+      # max_updates = max_updates -1
+      # print(max_updates)
+      name <- names(availableSpecies)[[i]]
+      filePath <- availableSpecies[[i]]
+      toUpdate <- raster::brick(availableSpecies[[i]])
+      last_update <- as.Date(str_replace_all(sub('.', '', last(names(toUpdate))), "[/.]", "-"))
+      currentDay <- Sys.Date() -2
+      #Calculate file age (in days) after fetching the last date it was modified
+      #last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
+      print(last_update)
+      file_age <- as.double.difftime(currentDay - last_update)
       
-      accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
-                   Sys.Date() - 2, 
-                   species = name)
-      
-    }else{
-      #If the file is at least a week old and we have gridMET data for this year, update it
-      if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
-        print(str_c("Updating ", name))
-        accumulateDD(end_date = Sys.Date() - 2, 
-                     species = name,
-                     cum_DD = toUpdate)
-        return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
-      } else return(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
-    }})}
+      thisYear <- format(Sys.Date(), '%Y')
+      #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
+      if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
+        print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
+        
+        accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
+                     Sys.Date() - 2, 
+                     species = name)
+        max_updates <- max_updates -1
+        
+      }else{
+        #If the file is at least a week old and we have gridMET data for this year, update it
+        if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
+          print(str_c("Updating ", name))
+          accumulateDD(end_date = Sys.Date() - 2, 
+                       species = name,
+                       cum_DD = toUpdate)
+          max_updates <- max_updates -1
+          return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
+        } else return(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
+      }}})}
 
 #Execute function every time the app starts up to make sure files are up to date: 
 
@@ -708,9 +720,9 @@ guide <- Cicerone$
     "observation-plot-wrapper",
     "Species observation plots",
     "Woah, a new tab appeared! This is the current insect development plot for your selected insect observation. 
-    We use weather data from stations in the GHCND network near the location where the insect was observed in conjunction with observed thermal parameters (BDT and EADDC).
+    We use weather data from stations in the GHCND network near the location where the insect was observed in conjunction with observed thermal parameters (T0 and G).
     The result is a plot depicting accumulated degree days (a proxy for development) as well as individual degree days, which is summed to produce accumulated degree days.
-    An insect is expected to reach adulthood when accumulated degree days equals their experimentally determined EADDC threshold (red line). 
+    An insect is expected to reach adulthood when accumulated degree days equals their experimentally determined threshold, G (red line). 
     Green lines mark the beginning of a new generation, and the assumption was made that this happens immediately after a species reaches adulthood."
   )$
   step(
@@ -781,7 +793,6 @@ ui <- fluidPage(
                                 min    = as.Date(str_c(year(Sys.Date()), '-01-01')),
                                 max = Sys.Date()-2,
                                 format = "mm/dd/yy")),
-                    verbatimTextOutput(outputId = "phnInf", placeholder = FALSE),
                     div(
                       id = "heatmap-resolution-wrapper",
                       tags$b("Advanced: Alter heatmap resolution"),
@@ -791,6 +802,7 @@ ui <- fluidPage(
                                    choiceNames = c("Day of Week", "Week"),
                                    choiceValues = c(TRUE, FALSE),
                                    selected = FALSE)),
+                    htmlOutput(outputId = "phnInf", container = div),
                     helpText("More information about the species in this heatmap is available in the 'Heatmap Species Info' tab below."),
                     tags$b("If you're stuck... "),
                     actionBttn("tour", "Take a Tour!", size = "sm", style = "float", color = "primary", block = TRUE))),
@@ -1050,8 +1062,8 @@ server <- function(input, output, session){
                        layerId = ~uid,
                        popup = paste("<em>",df$Species,"</em>", "<br>",
                                      #sci2comm(df$Species)[[1]][1], "<br>",
-                                     "<b> EADDC: </b>", round(df$EADDC, digits=2), "<br>",
-                                     "<b> BDT.C: </b>", round(df$BDT.C, digits=2))) %>% #,
+                                     "<b> G: </b>", round(df$EADDC, digits=2), "<br>",
+                                     "<b> T<sub>0</sub>: </b>", round(df$BDT.C, digits=2))) %>% #,
       # popupGraph(ncdc_plot(ncdc(datasetid='GHCND',
       #                           stationid=paste0('GHCND:', df$sid),
       #                           datatypeid='tmax',
@@ -1093,7 +1105,13 @@ server <- function(input, output, session){
                       c(0, EADDC), 
                       bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
                       na.color = "transparent")
+      labels <- c(str_c("0 - ", round(0.25 * EADDC), " (< 25%)"),
+                  str_c(round(0.25 * EADDC), " - ", round(0.5 * EADDC), " (25 - 50%)"),
+                  str_c(round(0.5 * EADDC), " - ", round(0.75 * EADDC), " (50 - 75%)"),
+                  str_c(round(0.75 * EADDC), " - ", floor(EADDC), " (75 - 99%)"),
+                  str_c(floor(EADDC), " - ", ceiling(EADDC), " (> 99%)"))
       
+      print("Made it to here")
       if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         #output$phnInf <- renderPrint("Image rendering...")
         toastr_info("Heatmap rendering...")
@@ -1102,15 +1120,17 @@ server <- function(input, output, session){
           addLegend(pal = pal,
                     values = c(0, EADDC),
                     group = "Heatmap",
-                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                    #labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                    labFormat = function(type, cuts, p) {  # Here's the trick
+                      paste0(labels)
+                    },
                     position = "bottomright",
-                    title = "Cumulative Degree Days") #%>% 
+                    title = "Accumulated Degree Days") #%>% 
           # addLayersControl(baseGroups = c("Heatmap", "Observations"),
           #                  options = layersControlOptions(collapsed = FALSE))
-        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
-                                          str_c("BDT: ", round(BDT, digits=2)),
-                                          str_c("EADDC: ", round(EADDC, digits=2)),
-                                          sep = "\n"))
+        output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
+                                          "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
+                                          "<b> G: </b>", str_c(round(EADDC, digits=2))))
         toastr_success("Heatmap layer rendered successfully")
       }else{
         shinyalert(
@@ -1140,16 +1160,18 @@ server <- function(input, output, session){
             map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
               addLegend(pal = pal,
                         values = c(0, EADDC),
-                        # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                        labFormat = function(type, cuts, p) {  # Here's the trick
+                          paste0(labels)
+                        },
+                        #labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
                         group = "Heatmap",
                         position = "bottomright",
-                        title = "Cumulative Degree Days") #%>% 
+                        title = "Accumulated Degree Days") #%>% 
             # addLayersControl(baseGroups = c("Heatmap", "Observations"),
             #                  options = layersControlOptions(collapsed = FALSE))
-            output$phnInf <- renderText(paste(str_c("Current heatmap date: ", dateR), 
-                                              str_c("BDT: ", round(BDT, digits=2)),
-                                              str_c("EADDC: ", round(EADDC, digits=2)),
-                                              sep = "\n"))
+            output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
+                                              "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
+                                              "<b> G: </b>", str_c(round(EADDC, digits=2))))
             toastr_success("Image computed successfully")
           }else{
             updateRadioButtons(session, "computeDD", selected = FALSE)
@@ -1160,28 +1182,30 @@ server <- function(input, output, session){
         while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
+        print(toView)
         map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6)  %>% 
           #Experiment here... 
           addLegend(pal = pal,
                     values = c(0, EADDC),
-                    # labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
-                    labFormat = labelFormat(),
+                    #labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                    labFormat = function(type, cuts, p) {  # Here's the trick
+                      paste0(labels)
+                    },
                     group = "Heatmap",
                     position = "bottomright",
-                    title = "Cumulative Degree Days") #%>% 
+                    title = "Accumulated Degree Days") #%>% 
         # addLayersControl(baseGroups = c("Heatmap", "Observations"),
         #                  options = layersControlOptions(collapsed = FALSE))
-        output$phnInf <- renderText(paste(str_c("Current heatmap date: ", tempDate), 
-                                          str_c("BDT: ", round(BDT, digits=2)),
-                                          str_c("EADDC: ", round(EADDC, digits=2)),
-                                          sep = "\n"))
+        output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
+                                          "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
+                                          "<b> G: </b>", str_c(round(EADDC, digits=2))))
         toastr_success("Heatmap rendered successfully")
         
       }
       return(map)}
     
     #Add the species raster to the map (calls addRasterImage based on selected species and computes current day if chosen)
-    map <- addSpeciesRaster(speciesPhenStack = raster::stack(readRDS(input$phenoSpecies)), 
+    map <- addSpeciesRaster(speciesPhenStack = raster::brick(input$phenoSpecies), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
                             BDT = speciesBDT_Dict[[input$phenoSpecies]])
     map
@@ -1244,9 +1268,9 @@ server <- function(input, output, session){
     s = input$speciesSearch_rows_selected
     if (length(s)) {
       cat('Using the following values for selected observations:\n\n')
-      cat(' BDT: ')
+      cat(' T0: ')
       cat(mean(dfPresent$BDT.C[s]))
-      cat('\n\n EADDC: ')
+      cat('\n\n G: ')
       cat(mean(dfPresent$EADDC[s]))
     }
   })
@@ -1329,11 +1353,11 @@ server <- function(input, output, session){
       screen(
         next_label = 'Continue! <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>',
         #next_condition = "!(length(input.speciesSearch_rows_selected) == 0)",
-        p("First, we will need to get some values. Specifically, we will need to know the insect's baseline developmental threshold \u00B0C (BDT.C) to calculate degree days \u00B0C. 
-          Also, we will need to know the egg to adult degree days \u00B0C (EADDC) value, which determines how many degree days an insect egg must accumulate before reaching 'adulthood'."),
+        p("First, we will need to get some values. Specifically, we will need to know the insect's baseline developmental threshold \u00B0C (T0) to calculate degree days \u00B0C. 
+          Also, we will need to know the egg to adult degree days \u00B0C (G) value, which determines how many degree days an insect egg must accumulate before reaching 'adulthood'."),
         p("You may search for your favorite insect species in our database: "),
         DT::dataTableOutput('speciesSearch'),
-        helpText("To select: Click on one or multiple observations in the table for use in plotting (if multiple are selected BDT.C and EADDC values are averaged)"),
+        helpText("To select: Click on one or multiple observations in the table for use in plotting (if multiple are selected T<sub>0</sub> and G values are averaged)"),
         verbatimTextOutput('speciesSearchResults'),
         p("Now, click continue to pick a location...")
         #next_condition = "!is.empty(input.speciesSearch_rows_selected)"
@@ -1341,7 +1365,7 @@ server <- function(input, output, session){
       screen(
         #next_condition = "as.numeric(input.zipCode) > 0",
         next_label = 'View plot! <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>',
-        p("Ok, now that we have BDT.C and EADDC values, to calculate degree days we simply need daily temperature data."),
+        p("Ok, now that we have T0 and G values, to calculate degree days we simply need daily temperature data."),
         p("Enter a zip code in the US to gather weather data: "),
         zipInput("zipcode", "Search for a zip code: "),
         #numericInput("mean_modal", "Mean", value = 0)
