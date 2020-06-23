@@ -204,12 +204,14 @@ cumsum_with_reset <- function(x, threshold, gen_gap) {
     if (pause == gen_gap){
       group <- group + 1
       cumsum <- 0
+      pause <- 0
     }
     
     cumsum <- cumsum + x[i]
     
     if (cumsum >= threshold) {
-      cumsum <- threshold
+      if(pause == 0)(cumsum <- threshold)
+      else(cumsum <- threshold + 1)
       pause <- pause + 1
     }
     
@@ -614,10 +616,9 @@ availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 #--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
 #----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
 updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
-  max_updates <- 1 
+  #max_updates <- 1 
   lapply(seq_along(availableSpecies), function(i){
     #Get name and filePath values from availableSpecies list at index i
-    if(max_updates != 0){
       #print("triggered")
       # print(max_updates)
       # max_updates = max_updates -1
@@ -640,7 +641,7 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
         accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
                      Sys.Date() - 2, 
                      species = name)
-        max_updates <- max_updates -1
+        #max_updates <- max_updates -1
         
       }else{
         #If the file is at least a week old and we have gridMET data for this year, update it
@@ -649,10 +650,10 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
           accumulateDD(end_date = Sys.Date() - 2, 
                        species = name,
                        cum_DD = toUpdate)
-          max_updates <- max_updates -1
+          #max_updates <- max_updates -1
           return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
         } else return(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
-      }}})}
+      }})}
 
 #Execute function every time the app starts up to make sure files are up to date: 
 
