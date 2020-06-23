@@ -733,6 +733,12 @@ guide <- Cicerone$
     Degree days are summed from the beginning of the date range, which defaults to January 1st of this year (winter in the Northern Hemisphere)."
   )$
   step(
+    "observation-gap-wrapper",
+    "Changing the generational gap",
+    "While we made the assumption that every species produces new eggs immediately upon reaching adulthood, this is not necessarily the case. 
+    Here, you can easily change the generational gap to any number of days for the species you are plotting."
+  )$
+  step(
     "plotting-assistant-wrapper",
     "Phenology plotting tool",
     "Congratulations, you're ready to start using our visualization. As a final note, I'd like to highlight our new phenology plotting tool. 
@@ -851,7 +857,17 @@ ui <- fluidPage(
                                             min    = "1970-01-01",
                                             format = "mm/dd/yy",
                                             separator = " - ")),
-                           helpText("Note: To plot springtime phenology for an observation located in the Southern Hemisphere, change the starting date to 6/1. This makes visualizing Southern Hemisphere springtime development possible, and is needed due to differences in the timing of spring.")))), 
+                           helpText("Note: To plot springtime phenology for an observation located in the Southern Hemisphere, change the starting date to 6/1. 
+                                    This makes visualizing Southern Hemisphere springtime development possible, and is needed due to differences in the timing of spring."),
+                           div(
+                             id = "observation-gap-wrapper",
+                             numericInput(
+                               inputId = "genGap",
+                               label = "Number of days from adulthood to new offspring: ", 
+                               value = 1,
+                               min = 1
+                             )
+                           )))), 
     br(),
     hr()
   )
@@ -980,11 +996,16 @@ server <- function(input, output, session){
     x <- input$dateRange
   })
   
+  speciesGenGap <- reactive({
+    x <- input$genGap
+  })
+  
   #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
   #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
   observeEvent({
     input$mymap_marker_click
     timeRange()
+    speciesGenGap()
   }, {
     click<-input$mymap_marker_click
     uid <- click$id
@@ -1013,6 +1034,7 @@ server <- function(input, output, session){
       
       #weather <- gatherWeatherData(uid, time)
       #speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesStationDF$sid1==""), ]
+      gGap <- speciesGenGap()
       
       if((!is.null(weather$tMax1) && !is.null(weather$tMin1)) || (!is.null(weather$tMax2) && !is.null(weather$tMin2))){
         toastr_success(str_c("Weather data found for ", dfWrangled$Species[uid], " in ", dfWrangled$Location[uid]), timeOut = 8000)
@@ -1029,7 +1051,8 @@ server <- function(input, output, session){
                 lat = dfWrangled$lat[uid],
                 lon = dfWrangled$lon[uid],
                 breaks="1 month",
-                dateformat="%m/%y")})
+                dateformat="%m/%y",
+                gen_gap = gGap)})
         toastr_success("Phenology plot loaded below map", "Plot Ready", timeOut = 8000)
         output$obsPltInf <- renderText(str_c("Source of thermal data for ", dfWrangled$Species[uid], ": ", dfWrangled$Author[uid], ", ", dfWrangled$Year[uid], ", ", dfWrangled$Journal[uid]))}
       else {
@@ -1258,6 +1281,10 @@ server <- function(input, output, session){
     x <- input$userDateRange
   })
   
+  speciesGenGapUser <- reactive({
+    x <- input$userGenGap
+  })
+  
   #Give users a choice of observations
   dfPresent <- dfWrangled %>% ungroup() %>%
     select(Species, BDT.C, EADDC, Location, Author, Year, Journal) 
@@ -1312,6 +1339,7 @@ server <- function(input, output, session){
         uid <- input$speciesSearch_rows_selected
         
         time <- timeRangeUser()
+        gGap <- speciesGenGapUser()
         
         weather <- gatherWeatherData(timeRange = time, station1 = zipStations$id[1], station2 = zipStations$id[2])
         print(str_c("UID: ", uid))
@@ -1329,7 +1357,8 @@ server <- function(input, output, session){
                     species = unique(dfPresent$Species[uid]),
                     breaks="1 month",
                     dateformat="%m/%y",
-                    locality = str_c(zipLocation$City, ", ", zipLocation$State))})
+                    locality = str_c(zipLocation$City, ", ", zipLocation$State),
+                    gen_gap = gGap)})
           print("Plot rendered")
           toastr_success("Zip code found", timeOut = 10000)
           toastr_success("Plot rendered successfully", timeOut = 10000)
@@ -1378,6 +1407,16 @@ server <- function(input, output, session){
                        min    = "1970-01-01",
                        format = "mm/dd/yy",
                        separator = " - "),
+        tags$b("Number of days from adulthood to new offspring: "),
+        helpText("While we made the simplifying assumption that each species produces eggs as soon as a generation reaches adulthood, this is not the case for many species. 
+                 Feel free to experiment with different generational gaps here."),
+        numericInput(inputId = "userGenGap",
+                     label = NULL, 
+                     value = 1,
+                     min = 1),
+        tags$head(
+          tags$style(HTML('#goButton{background-color:#5fdba7}'))
+        ),
         actionButton("goButton", "Find weather in date range for zip code and update plot!"),
         verbatimTextOutput('zipWeather'),
         verbatimTextOutput("zipAdvice")
