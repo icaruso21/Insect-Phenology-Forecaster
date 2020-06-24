@@ -18,6 +18,7 @@ library(shinyalert)
 library(plotly)
 library(shinyglide)
 library(cicerone)
+
 #if (!require('devtools')) install.packages('devtools')
 #devtools::install_github("mikejohnson51/AOI")
 #devtools::install_github("mikejohnson51/climateR")
@@ -32,26 +33,15 @@ library(climateR)
 library(glouton)
 library(shinyscroll)
 
-# cranbraries <- c('shiny', 'leaflet', 'mosaic', 'rnoaa', 'shinyWidgets',
-#                  'lubridate', 'taxize', 'raster', 'rasterVis', 'tidyverse',
-#                  'hash', 'shinycssloaders', 'rgdal', 'shinytoastr', 'shinyalert',
-#                  'plotly', 'shinyglide', 'cicerone')
-# lapply(cranbraries, library, character.only = TRUE)
-# 
-# 
-# #Now importing packages from Github
-# gitlibs_repos <- c('dreamRs/shinypop', 'carlganz/shinyCleave', 'mikejohnson51/AOI', 'mikejohnson51/climateR', 'ColinFay/glouton')
-# lapply(gitlibs_repos, devtools::install_github)
-# gitlibs_names <- c('shinypop', 'shinyCleave', 'AOI', 'climateR', 'glouton')
-# lapply(gitlibs_names, library, character.only = TRUE)
-
 js <- "$(document).on('shiny:connected', function(event) {
   Shiny.onInputChange('loaded', true)
 });"
 
-
-##Change this if you want the heatmap to automatically update every week.
+##Change this if you want the heatmap to not automatically update
 autoUpdateHeatmap = TRUE
+
+##How many species heatmaps can be updated when a user begins a session
+max_heatmap_updates_per_session = 1
 
 #library(rgdal)
 #library(testit)
@@ -170,12 +160,11 @@ nearestStat <- function(Y) {meteo_nearby_stations(lat_lon_df = Y,
 #Tdat: 2 column matrix with Tmin followed by Tmax
 #LDT:lower developmental threshold
 #------Adapted from Lauren Buckley (no longer allows for negative DDs and accepts NA values)
-degree.days.mat=function(Tmin, Tmax, LDT){
-  
+degree.days.mat = function(Tmin, Tmax, LDT){
   
   # entirely above LDT
   #|| is.null(Tmin) || is.null(Tmax)
-  if(is.na(Tmin) || is.na(Tmax) || is.na(Tmin) || is.na(Tmax)){dd = NA}
+  if(is.na(Tmin) || is.na(Tmax)){dd = NA}
   else{
     if(Tmin>=LDT) {dd = (Tmax+Tmin)/2-LDT}
     
@@ -425,8 +414,8 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   }
   if(!is.Date(start_date)){start_date <- as.Date(start_date)}
   if(!is.Date(end_date)){end_date <- as.Date(end_date)}
-  print(start_date)
-  
+  print(str_c("Start date: ",start_date))
+
   if((is.null(BDT) || is.null(EADDC)) && is.null(species)){return("Please provide T0 and G arguments, or a species to query")}
   if(!is.null(species)){
     toAccumulate <- get_dfWrangled() %>% filter(Species == species)
@@ -452,68 +441,28 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
   AOI = aoi_get(state = "conus")
   #Get temp raster stack for start_date
   #raster::plot(AOI)
-  p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
-  r = raster::stack(p$tmax, p$tmin)
-  names(r) = c('tmax', 'tmin')
   #print("not above here")
   #Initialize cum_DD to DD values for start_date
   if(is.null(cum_DD)){
     #print("initializing")
+    p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
+    r = raster::brick(p)
+    #r = raster::brick(p$tmax[[1]], p$tmin[[1]])
+    names(r) = c('tmin', 'tmax')
+    
     pastStack <- NULL
-    cum_DD <- calc(r, fun = function(x){
-      #print(value(x[2]))
-      degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+    cum_DD <- overlay(r, fun = function(x){degree.days.mat(mosaic::value(x[1]) -273.15, mosaic::value(x[2]) -273.15, BDT)})
+    p <- NULL
+    r <- NULL
   }else{
     pastStack <- cum_DD
+    # hold_temps <- tempfile(fileext = ".grd")
+    # writeRaster(tstack, filename = hold_temps)
     cum_DD <- raster(pastStack, layer = nlayers(pastStack))}
   print(cum_DD)
   # cum_DD <- calc(r, fun = function(x){
   #   degree.days.mat(x[2] / 10, x[1] / 10, BDT)})
   #Set current day to the next start day
-  week <- 1
-  current_date = start_date + 1
-  the_stack <- NULL
-  #Accumulate Degree Days from current_date to end_date, inclusive.
-  while(current_date <= end_date){
-    #Get raster stack of tmin and tmax for current day
-    temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
-    tstack = raster::stack(temps$tmax, temps$tmin)
-    names(tstack) = c('tmax', 'tmin')
-    print(current_date)
-    #Calculate todays DD values
-    current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
-    #print(identical(current_DD, cum_DD))
-    names(current_DD) = c(current_date)
-    #Add cumulative DD values to current_date DD values (current_DD)
-    cum_DD <- cum_DD + current_DD
-    #Reset cum_DD values greater than EADDC to 0
-    cum_DD <- calc(cum_DD, fun = function(cumul){
-      if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
-        return(as.vector(EADDC))} 
-      else {
-        return(cumul[1])}})
-    #Increment current_date
-    names(cum_DD) = c(current_date)
-    week <- week + 1
-    current_date = current_date + 1
-    if(week == 7){
-      if(!is_null(pastStack)){
-        the_stack <- raster::stack(pastStack, cum_DD)
-      }else{
-      the_stack <- raster::stack(cum_DD)}
-      print(str_c("the_stack: ",the_stack))
-      print(names(the_stack))
-    }
-    if(week == 14){
-      #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
-      the_stack <- raster::stack(the_stack, cum_DD)
-      #writeRaster(the_stack, "holdraster.grd", overwrite=TRUE)
-      print(the_stack)
-      print(names(the_stack))
-      #the_stack <- NULL
-      week <- 7
-    }
-  }
   
   #Update ./dat/availablePhenoSpecies.csv and ./dat/phenoSpeciesEADDC.csv with new species entry
   if(!is.null(species)){
@@ -530,20 +479,90 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
       write_rds(speciesBDT_Dict, "./dat/phenoSpeciesBDT.csv")}
     #Add species to available list
     availablePhenoSpecies <- append(availablePhenoSpecies, filePath)
-    print(str_c("Saving species: ", species))
     names(availablePhenoSpecies)[length(availablePhenoSpecies)] <- str_c(species)
     write_rds(availablePhenoSpecies, "./dat/availablePhenoSpecies.csv")}
   else{filePath <- str_c("./dat/", make.names(current_date), ".grd")}
   
+  print(str_c("Filepath: ", filePath))
+  
+  week <- 1
+  current_date = start_date + 1
+  the_stack <- NULL
+  #Accumulate Degree Days from current_date to end_date, inclusive.
+  while(current_date <= end_date){
+    #Get raster stack of tmin and tmax for current day
+    temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
+    tstack = raster::brick(temps)
+    names(tstack) = c('tmin', 'tmax')
+    current_DD <- overlay(tstack, fun = function(x){degree.days.mat(mosaic::value(x[1]) -273.15, mosaic::value(x[2]) -273.15, BDT)})
+    
+    #print(current_date)
+    # hold_temps <- tempfile(fileext = ".grd")
+    # writeRaster(tstack, filename = hold_temps)
+    #Calculate todays DD values
+    #current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+
+    temps <- NULL
+    tstack <- NULL
+    
+    
+    print(str_c("Calculated DDs for ", current_date))
+    #print(identical(current_DD, cum_DD))
+    #names(current_DD) = c(current_date)
+    #Add cumulative DD values to current_date DD values (current_DD)
+    cum_DD <- cum_DD + current_DD
+    #Reset cum_DD values greater than EADDC to 0
+    cum_DD <- overlay(cum_DD, fun = function(cumul){
+      if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
+        return(as.vector(EADDC))} 
+      else {
+        return(cumul[1])}})
+    #Increment current_date
+    names(cum_DD) = c(current_date)
+    week <- week + 1
+    current_date = current_date + 1
+    if(week == 7){
+      if(!is_null(pastStack)){
+        the_stack <- raster::stack(pastStack, cum_DD)
+        #hold_brick <- tempfile(fileext = ".grd")
+        #writeRaster(the_stack, filename = hold_brick)
+        #writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
+        writeRaster(the_stack, filePath, overwrite=TRUE)
+        
+        pastStack <- NULL
+      }else{
+      the_stack <- raster::stack(cum_DD)}
+      print(str_c("the_stack: ",the_stack))
+      #hold_brick <- tempfile(fileext = ".grd")
+      #writeRaster(the_stack, filename = hold_brick)
+      #writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
+      writeRaster(the_stack, filePath, overwrite=TRUE)
+      print(names(the_stack))
+    }
+    if(week == 14){
+      #if(is.null(the_stack)){the_stack = raster::stack("holdraster.grd")}
+      the_stack <- raster::stack(the_stack, cum_DD)
+      #hold_brick <- tempfile(fileext = ".grd")
+      #writeRaster(the_stack, filename = hold_brick)
+      #writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
+      writeRaster(the_stack, filePath, overwrite=TRUE)
+      print(the_stack)
+      print(names(the_stack))
+      #the_stack <- NULL
+      week <- 7
+    }
+  }
+  
+  
   #Save the raster to the dat folder
   print(str_c("Writing raster: ", the_stack))
   #saveRDS(the_stack, filePath)
+
+  #hold_brick <- tempfile(fileext = ".grd")
+  #writeRaster(the_stack, filename = hold_brick)
+  #writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
   
-  hold_brick <- tempfile(fileext = ".grd")
-  writeRaster(the_stack, filename = hold_brick)
-  writeRaster(brick(hold_brick), filePath, overwrite=TRUE)
-  
-  return(brick(hold_brick))
+  return(the_stack)#brick(hold_brick))
   #raster::plot(newR)
 }
 
@@ -560,16 +579,18 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
   print(str_c("Accumulating degree days starting at " , start_date, " until ", end_date, "..."))
   print(str_c("T0: ", BDT, ", G: ", EADDC))
   
-  p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
-  r = raster::stack(p$tmax, p$tmin)
-  names(r) = c('tmax', 'tmin')
   #print("not above here")
   #Initialize cum_DD to DD values for start_date
   if(is.null(cum_DD)){
-    #print("initializing")
-    cum_DD <- calc(r, fun = function(x){
-      #print(value(x[2]))
-      degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+    p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
+    r = raster::stack(p)
+    names(r) = c('tmin', 'tmax')
+    
+    pastStack <- NULL
+    #print('1')
+    cum_DD <- overlay(r, fun = function(x){degree.days.mat(mosaic::value(x[1]) -273.15, mosaic::value(x[2]) -273.15, BDT)})
+    p <- NULL
+    r <- NULL
   }
   print("Initial raster layer: ")
   print(cum_DD)
@@ -581,17 +602,21 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
   while(current_date <= end_date){
     #Get raster stack of tmin and tmax for current day
     temps = getGridMET(AOI, param = c('tmax','tmin'), startDate = current_date)
-    tstack = raster::stack(temps$tmax, temps$tmin)
-    names(tstack) = c('tmax', 'tmin')
+    tstack = raster::brick(temps)
+    names(tstack) = c('tmin', 'tmax')
+    
     print(str_c("Accumulating ", current_date))
     #Calculate todays DD values
-    current_DD <- calc(tstack, fun = function(x){degree.days.mat(value(x[2]) -273.15, value(x[1]) -273.15, BDT)})
+    current_DD <- overlay(tstack, fun = function(x){degree.days.mat(mosaic::value(x[1]) -273.15, mosaic::value(x[2]) -273.15, BDT)})
+    temps <- NULL
+    tstack <- NULL
     #print(identical(current_DD, cum_DD))
     names(current_DD) = c(current_date)
     #Add cumulative DD values to current_date DD values (current_DD)
     cum_DD <- cum_DD + current_DD
     #Reset cum_DD values greater than EADDC to 0
-    cum_DD <- calc(cum_DD, fun = function(cumul){
+    
+    cum_DD <- overlay(cum_DD, fun = function(cumul){
       if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
         return(as.vector(EADDC))} 
       else {
@@ -615,9 +640,15 @@ availablePhenoSpecies <- read_rds("./dat/availablePhenoSpecies.csv")
 
 #--This function checks the age of the phenology maps for species we have and updates them if they are over a week old.
 #----availableSpecies: an optional list of species names and locations of phenology grids for corresponding species, it defaults to reading the current availablePhenoSpecies list.
-updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv")){
-  #max_updates <- 1 
-  lapply(seq_along(availableSpecies), function(i){
+updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpecies.csv"), maxUpdates = 1){
+  
+  if(!is.null(max_heatmap_updates_per_session)) {maxUpdates = max_heatmap_updates_per_session}
+  
+  updates_remaining <- maxUpdates
+  #lapply(seq_along(availableSpecies), function(i){
+    i <- 1
+    
+    while(updates_remaining >= 1 && i <= length(availableSpecies)){
     #Get name and filePath values from availableSpecies list at index i
       #print("triggered")
       # print(max_updates)
@@ -630,34 +661,55 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
       currentDay <- Sys.Date() -2
       #Calculate file age (in days) after fetching the last date it was modified
       #last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
-      print(last_update)
+      print(str_c("Layer last updated on ", last_update))
       file_age <- as.double.difftime(currentDay - last_update)
+      print(str_c("Data currently available for ", currentDay))
       
       thisYear <- format(Sys.Date(), '%Y')
       #If the file is from the previous year and we have gridMET data from this year, delete the file and start a new one.
       if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
         print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
-        
+        #toastr_info("Please be patient, a new degree day map is being created for this year.")
         accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
                      Sys.Date() - 2, 
                      species = name)
         #max_updates <- max_updates -1
+        updates_remaining <- updates_remaining -1
         
       }else{
         #If the file is at least a week old and we have gridMET data for this year, update it
         if((file_age >= 7) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
-          print(str_c("Updating ", name))
-          accumulateDD(end_date = Sys.Date() - 2, 
+          #toastr_info("A degree day map is being updated.")
+          weeks <- as.integer(file_age / 7)
+          stop_update <- last_update + (7 * weeks)
+          dir.create('./dat/tmp')
+          rasterOptions(tmpdir='./dat/tmp')
+          hold_rast <- rasterTmpFile(prefix = make.names(name))
+          writeRaster(toUpdate, filename = hold_rast)
+          print(str_c("Updating ", name, ". This file was ", file_age ," days old."))
+          accumulateDD(end_date = stop_update, 
                        species = name,
-                       cum_DD = toUpdate)
-          #max_updates <- max_updates -1
-          return(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
-        } else return(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
-      }})}
+                       cum_DD = brick(hold_rast))
+          #Just added to cleanup temp files
+          #removeTmpFiles()
+          unlink("./dat/tmp", recursive=TRUE)
+          updates_remaining <- updates_remaining -1
+          print(str_c(name, " was ", file_age, " days old. It is now 2 days old, due to gridMET restrictions."))
+        } else print(str_c(name, " was modified less than a week ago (", file_age, " days). It will be updated in ", (7 - file_age), " days."))
+      }
+      i <- i + 1}}
 
 #Execute function every time the app starts up to make sure files are up to date: 
 
-if(autoUpdateHeatmap) print(updatePhenology())
+
+
+#if(autoUpdateHeatmap) updatePhenology()
+
+# pll <- function(){
+#   run_r_process(updatePhenology())
+# }
+# synchronise(pll())
+
 #--------------------------------------------------------------------------------
 
 #----------Guided walkthrough------------------
@@ -1135,7 +1187,6 @@ server <- function(input, output, session){
                   str_c(round(0.75 * EADDC), " - ", floor(EADDC), " (75 - 99%)"),
                   str_c(floor(EADDC), " - ", ceiling(EADDC), " (> 99%)"))
       
-      print("Made it to here")
       if(input$computeDD){if(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', dateR)), sum) == 1){
         #output$phnInf <- renderPrint("Image rendering...")
         toastr_info("Heatmap rendering...")
@@ -1157,56 +1208,69 @@ server <- function(input, output, session){
                                           "<b> G: </b>", str_c(round(EADDC, digits=2))))
         toastr_success("Heatmap layer rendered successfully")
       }else{
-        shinyalert(
-          title = "Caution",
-          text = "This may take several minutes. Are you sure you want to proceed?",
-          closeOnEsc = TRUE,
-          closeOnClickOutside = FALSE,
-          html = FALSE,
-          type = "warning",
-          showConfirmButton = TRUE,
-          showCancelButton = TRUE,
-          confirmButtonText = "Proceed",
-          confirmButtonCol = "#AEDEF4",
-          cancelButtonText = "Cancel",
-          timer = 0,
-          imageUrl = "",
-          animation = TRUE, 
-          callbackR = function(x){if(x != FALSE){
-            toastr_warning("Computing image...", timeOut = 20000)
-            tempDate <- dateR
-            while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
-              tempDate <- tempDate - 1}
-            output$phnInf <- renderPrint(str_c("Accumulating from: ", tempDate))
-            toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
-            if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
-            toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
-            map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
-              addLegend(pal = pal,
-                        values = c(0, EADDC),
-                        labFormat = function(type, cuts, p) {  # Here's the trick
-                          paste0(labels)
-                        },
-                        #labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
-                        group = "Heatmap",
-                        position = "bottomright",
-                        title = "Accumulated Degree Days") #%>% 
-            # addLayersControl(baseGroups = c("Heatmap", "Observations"),
-            #                  options = layersControlOptions(collapsed = FALSE))
-            output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
-                                              "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
-                                              "<b> G: </b>", str_c(round(EADDC, digits=2))))
-            toastr_success("Image computed successfully")
-          }else{
-            updateRadioButtons(session, "computeDD", selected = FALSE)
-            }})
+        
+
+        
+          # proceed_with_caution <- shinyalert(
+          #   title = "Caution",
+          #   text = "This may take several minutes. Are you sure you want to proceed?",
+          #   closeOnEsc = TRUE,
+          #   closeOnClickOutside = FALSE,
+          #   html = FALSE,
+          #   type = "warning",
+          #   showConfirmButton = TRUE,
+          #   showCancelButton = TRUE,
+          #   confirmButtonText = "Proceed",
+          #   confirmButtonCol = "#AEDEF4",
+          #   cancelButtonText = "Cancel",
+          #   imageUrl = "",
+          #   animation = TRUE,
+          #   timer = 19999)
+          # 
+          # Sys.sleep(20)
+          # print(proceed_with_caution)
+          # 
+          # if(!is.null(proceed_with_caution)){
+          #   if(proceed_with_caution){
+              toastr_warning("Computing image...", timeOut = 20000)
+              tempDate <- dateR
+              while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
+                tempDate <- tempDate - 1}
+              output$phnInf <- renderPrint(str_c("Accumulating from: ", tempDate))
+              toAccum <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
+              if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
+              toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
+              print(str_c("Update toView:", toView))
+              raster::plot(toView)
+              map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
+                addLegend(pal = pal,
+                          values = c(0, EADDC),
+                          labFormat = function(type, cuts, p) {  # Here's the trick
+                            paste0(labels)
+                          },
+                          #labels = c("0 - 25%", "25 - 50%", "50 - 75%", "75 - 99%", ">99%"),
+                          group = "Heatmap",
+                          position = "bottomright",
+                          title = "Accumulated Degree Days") 
+              #print(str_c("Updated map: "), map)#%>% 
+              # addLayersControl(baseGroups = c("Heatmap", "Observations"),
+              #                  options = layersControlOptions(collapsed = FALSE))
+              output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
+                                                "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
+                                                "<b> G: </b>", str_c(round(EADDC, digits=2))))
+              toastr_success("Image computed successfully")
+          
+           
+        
       }}else{
         toastr_info("Heatmap rendering...")
         tempDate <- dateR
         while(reduce(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate)), sum) != 1){
           tempDate <- tempDate - 1}
         toView <- raster(speciesPhenStack, layer = which(names(speciesPhenStack) %in% str_c('X', gsub('-', '.', tempDate))))
-        print(toView)
+        
+        print(str_c("No update toView:", toView))
+        
         map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6)  %>% 
           #Experiment here... 
           addLegend(pal = pal,
@@ -1217,10 +1281,12 @@ server <- function(input, output, session){
                     },
                     group = "Heatmap",
                     position = "bottomright",
-                    title = "Accumulated Degree Days") #%>% 
+                    title = "Accumulated Degree Days") #%>%
+        #print(str_c("Non updated map: "), map)
+        
         # addLayersControl(baseGroups = c("Heatmap", "Observations"),
         #                  options = layersControlOptions(collapsed = FALSE))
-        output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(dateR), "<br>", 
+        output$phnInf <- renderText(paste("<b> Current heatmap date: </b>", str_c(tempDate), "<br>", 
                                           "<b> T<sub>0</sub>: </b>", str_c(round(BDT, digits=2)), "<br>",
                                           "<b> G: </b>", str_c(round(EADDC, digits=2))))
         toastr_success("Heatmap rendered successfully")
@@ -1232,6 +1298,9 @@ server <- function(input, output, session){
     map <- addSpeciesRaster(speciesPhenStack = raster::brick(input$phenoSpecies), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
                             BDT = speciesBDT_Dict[[input$phenoSpecies]])
+    
+    
+    
     map
   })
   
