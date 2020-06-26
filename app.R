@@ -18,6 +18,7 @@ library(shinyalert)
 library(plotly)
 library(shinyglide)
 library(cicerone)
+#library(caret)
 
 #if (!require('devtools')) install.packages('devtools')
 #devtools::install_github("mikejohnson51/AOI")
@@ -183,20 +184,20 @@ degree.days.mat = function(Tmin, Tmax, LDT){
 }
 
 # cumsum with reset adapted from @jgilfillan on github, many thanks! 
-cumsum_with_reset <- function(x, threshold, gen_gap) {
-  cumsum <- 0
-  group <- 1
+cumsum_with_reset <- function(x, threshold, gen_gap, prev_accum = 0) {
+  cumsum <- prev_accum
+  #group <- 1
   result <- numeric()
   pause <- 0
   
   for (i in 1:length(x)) {
     if (pause == gen_gap){
-      group <- group + 1
+      #group <- group + 1
       cumsum <- 0
       pause <- 0
     }
     
-    cumsum <- cumsum + x[i]
+    if(!((i == 1) && (prev_accum != 0))){cumsum <- cumsum + x[i]}
     
     if (cumsum >= threshold) {
       if(pause == 0)(cumsum <- threshold)
@@ -221,11 +222,12 @@ dd_plot <- function(tMax1, tMax2,
                     breaks = NULL, 
                     dateformat='%m/%y',
                     locality = NULL,
-                    gen_gap = 1) {
+                    gen_gap = 1,
+                    forecast_length = 30) {
   UseMethod("dd_plot")
 }
 
-dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, endTime, species, lat = NULL, lon = NULL, breaks = NULL, dateformat='%m/%y', locality = NULL, gen_gap = 1) {
+dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, endTime, species, lat = NULL, lon = NULL, breaks = NULL, dateformat='%m/%y', locality = NULL, gen_gap = 1, forecast_length = 30) {
   
   #Making a new dataframe that has all of tMax1 and tMax2 for missing dates
   if(!is.null(tMax1) && !is.null(tMax2) && !is.null(tMin1) && !is.null(tMin2)) {
@@ -294,14 +296,31 @@ dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, e
   
   #------------------
   if(!is.null(lat) && !is.null(lon)){
-  observationLocationLookup <- geocode_rev(c(lat, lon))
+  observationLocationLookup <- AOI::geocode_rev(c(lat, lon))
   species_locality <- str_c(observationLocationLookup$county, ", ", observationLocationLookup$state, ", ", toupper(observationLocationLookup$country_code))
   }
   
+  #smoother <- loess(dd~as.numeric(date), data = dDays, span=0.75)
+  
+  #set.seed(123)
+  #training.samples <- dDays$dd %>%
+    #createDataPartition(p = 0.8, list = FALSE)
+  #train.data  <- dDays[as.vector(training.samples), ]
+  #test.data <- dDays[as.vector(-training.samples), ]
+  poly_model <- lm(dd ~ poly(as.numeric(date), 2, raw = TRUE), data = dDays)
+  #predict(poly_model, data.frame(date = as.numeric(2020-01-01)))
+  forecast <- NULL
+  forecast$date <- c(seq.Date(from = dDays$date[length(dDays$csum)], to = dDays$date[length(dDays$csum)] + forecast_length, by = "day"))
+  forecast$dd <- as.vector(predict(poly_model, forecast, type="response"))
+  forecast$csum <- cumsum_with_reset(forecast$dd, EADDC, gen_gap, dDays$csum[length(dDays$csum)])
+  
   #Start the plot and add the three variables to be plotted (date, csum, dd)
   fig <- plot_ly(dDays, x = ~date) %>% 
-    add_lines(y = ~csum, name = "Accumulated Degree Days") %>% 
-    add_lines(y = ~dd, name = "Individual Degree Days", fill = 'tozeroy')
+    add_lines(x = ~date, y = ~csum, name = "Accumulated Degree Days") %>% 
+    add_lines(x = ~date, y = ~dd, name = "Individual Degree Days", fill = 'tozeroy') %>% 
+    add_lines(x = ~date, y = stats::predict(poly_model), name = "Polynomial Fit", line = list(dash = "dash"), visible = "legendonly") %>% 
+    add_lines(x = forecast$date, y = forecast$dd, name = "Pred. Degree Days", line = list(dash = "dash")) %>% 
+    add_lines(x = forecast$date, y = forecast$csum, name = "Pred. Accumulated Degree Days")
   
   #Add generation dashed line
   datesAdulthoodReached <- dDays$date[which(dDays$csum == EADDC)]
@@ -312,16 +331,26 @@ dd_plot.default <- function(tMax1, tMax2, tMin1, tMin2, BDT, EADDC, startTime, e
                    y = 0, 
                    yend = EADDC*1.05, 
                    name = "Eggs Reached Adulthood",
-                   line = list(dash = "dash"))
-    
+                   line = list(dash = "dash"))}
+  
+  datesAdulthoodReached_future <- forecast$date[which(forecast$csum == EADDC)]
+  if(length(datesAdulthoodReached_future) != 0){
+    fig <- fig %>% 
+      add_segments(x = datesAdulthoodReached_future +1, 
+                   xend = datesAdulthoodReached_future +1, 
+                   y = 0, 
+                   yend = EADDC*1.05, 
+                   name = "Eggs Likely to Reach Adulthood",
+                   line = list(dash = "dash"))}
+  
     #Add horizontal dashed line at EADDC
     fig <- fig %>% 
       add_segments(x = startTime, 
-                   xend = endTime, 
+                   xend = dDays$date[length(dDays$csum)] + forecast_length, 
                    y = EADDC, 
                    yend = EADDC, 
                    name = "G",
-                   line = list(dash = "dash"))}
+                   line = list(dash = "dash"))
   
   #Beautify and add date selectors
   fig <- fig %>% layout(
@@ -775,8 +804,9 @@ guide <- Cicerone$
     "Woah, a new tab appeared! This is the current insect development plot for your selected insect observation. 
     We use weather data from stations in the GHCND network near the location where the insect was observed in conjunction with observed thermal parameters (T0 and G).
     The result is a plot depicting accumulated degree days (a proxy for development) as well as individual degree days, which is summed to produce accumulated degree days.
-    An insect is expected to reach adulthood when accumulated degree days equals their experimentally determined threshold, G (red line). 
-    Green lines mark the beginning of a new generation, and the assumption was made that this happens immediately after a species reaches adulthood."
+    An insect is expected to reach adulthood when accumulated degree days equals their experimentally determined threshold, G. 
+    Vertical lines mark the beginning of a new generation, and the assumption was made that this happens immediately after a species reaches adulthood. 
+    A polynomial regression model was used to predict future degree day accumulation and can be viewed by selecting it in the legend."
   )$
   step(
     "observation-dates-wrapper",
@@ -789,8 +819,11 @@ guide <- Cicerone$
     "Changing the generational gap",
     "While we made the assumption that every species produces new eggs immediately upon reaching adulthood, this is not necessarily the case. 
     Here, you can easily change the generational gap to any number of days for the species you are plotting."
-  )$
-  step(
+  )$step(
+    "prediction-length-wrapper",
+    "Extrapolating polynomial model",
+    "We automatically extrapolate data from a polynomial regression 30 days ahead of current weather data. You can change this here (up to 60 days)"
+  )$step(
     "plotting-assistant-wrapper",
     "Phenology plotting tool",
     "Congratulations, you're ready to start using our visualization. As a final note, I'd like to highlight our new phenology plotting tool. 
@@ -919,7 +952,16 @@ ui <- fluidPage(
                                value = 1,
                                min = 1
                              )
-                           )))), 
+                           ),
+                           div(
+                             id = "prediction-length-wrapper",
+                             numericInput(
+                               inputId = "fcLength",
+                               label = "Number of days to predict degree day accumulation: ", 
+                               value = 30,
+                               min = 1,
+                               max = 60
+                             ))))), 
     br(),
     hr()
   )
@@ -1052,12 +1094,17 @@ server <- function(input, output, session){
     x <- input$genGap
   })
   
+  fcLength <- reactive({
+    x <- input$fcLength
+  })
+  
   #If a user selects a circle marker, the phenology prediction plot for that insect will appear in the sidebar panel.
   #If the user changes timeRange(), and has already selected an observation from the map. The plot will update with new data.
   observeEvent({
     input$mymap_marker_click
     timeRange()
     speciesGenGap()
+    fcLength()
   }, {
     click<-input$mymap_marker_click
     uid <- click$id
@@ -1087,6 +1134,7 @@ server <- function(input, output, session){
       #weather <- gatherWeatherData(uid, time)
       #speciesStationDF <- speciesStationDF[!(is.na(speciesStationDF$sid1) || speciesStationDF$sid1==""), ]
       gGap <- speciesGenGap()
+      fcast <- fcLength()
       
       if((!is.null(weather$tMax1) && !is.null(weather$tMin1)) || (!is.null(weather$tMax2) && !is.null(weather$tMin2))){
         toastr_success(str_c("Weather data found for ", dfWrangled$Species[uid], " in ", dfWrangled$Location[uid]), timeOut = 8000)
@@ -1104,7 +1152,8 @@ server <- function(input, output, session){
                 lon = dfWrangled$lon[uid],
                 breaks="1 month",
                 dateformat="%m/%y",
-                gen_gap = gGap)})
+                gen_gap = gGap,
+                forecast_length = fcast)})
         toastr_success("Phenology plot loaded below map", "Plot Ready", timeOut = 8000)
         output$obsPltInf <- renderText(str_c("Source of thermal data for ", dfWrangled$Species[uid], ": ", dfWrangled$Author[uid], ", ", dfWrangled$Year[uid], ", ", dfWrangled$Journal[uid]))}
       else {
@@ -1354,6 +1403,10 @@ server <- function(input, output, session){
     x <- input$userGenGap
   })
   
+  fcastLength <- reactive({
+    x <- input$fcastLength
+  })
+  
   #Give users a choice of observations
   dfPresent <- dfWrangled %>% ungroup() %>%
     select(Species, BDT.C, EADDC, Location, Author, Year, Journal) 
@@ -1391,52 +1444,54 @@ server <- function(input, output, session){
         print(str_c("Zip location: ", zipLocation$geopoint))
         if(!identical(zipLocation$geopoint, character(0))){
           
-        latLon <- list("id" = zipcode,
-                       "latitude" = unlist(strsplit(zipLocation$geopoint, ","))[1],
-                       "longitude" = unlist(strsplit(zipLocation$geopoint, ","))[2])
-        
-        zipStations <- nearestStat(latLon)[[1]]
-        
-        zipPresent <-   zipStations %>% select(id, name, distance)
-        
-        output$zipResults <- renderPrint(dplyr::select(zipLocation, City, State)[1]) 
-        
-        output$zipWeather <- renderPrint(zipPresent)
-        #output$zipAdvice <- renderPrint("Go to the next page to see the plot... ")
-        
-        print(input$zipcode)
-        uid <- input$speciesSearch_rows_selected
-        
-        time <- timeRangeUser()
-        gGap <- speciesGenGapUser()
-        
-        weather <- gatherWeatherData(timeRange = time, station1 = zipStations$id[1], station2 = zipStations$id[2])
-        print(str_c("UID: ", uid))
-        if((!is.null(uid)) && ((!is.null(weather$tMax1) && !is.null(weather$tMin1)) || (!is.null(weather$tMax2) && !is.null(weather$tMin2)))){
-          print("plotting")
-          output$userPredPlot <- renderPlotly({
-            dd_plot(tMax1 = weather$tMax1, 
-                    tMax2 = weather$tMax2, 
-                    tMin1 = weather$tMin1, 
-                    tMin2 = weather$tMin2, 
-                    mean(dfPresent$BDT.C[uid]),
-                    mean(dfPresent$EADDC[uid]),
-                    time[1],
-                    time[2],
-                    species = unique(dfPresent$Species[uid]),
-                    breaks="1 month",
-                    dateformat="%m/%y",
-                    locality = str_c(zipLocation$City, ", ", zipLocation$State),
-                    gen_gap = gGap)})
-          print("Plot rendered")
-          toastr_success("Zip code found", timeOut = 10000)
-          toastr_success("Plot rendered successfully", timeOut = 10000)
-          toastr_info("Click 'View plot!' to view/save rendered plot", timeOut = 20000)
+          latLon <- list("id" = zipcode,
+                         "latitude" = unlist(strsplit(zipLocation$geopoint, ","))[1],
+                         "longitude" = unlist(strsplit(zipLocation$geopoint, ","))[2])
+          
+          zipStations <- nearestStat(latLon)[[1]]
+          
+          zipPresent <-   zipStations %>% select(id, name, distance)
+          
+          output$zipResults <- renderPrint(dplyr::select(zipLocation, City, State)[1]) 
+          
+          output$zipWeather <- renderPrint(zipPresent)
+          #output$zipAdvice <- renderPrint("Go to the next page to see the plot... ")
+          
+          print(input$zipcode)
+          uid <- input$speciesSearch_rows_selected
+          
+          time <- timeRangeUser()
+          gGap <- speciesGenGapUser()
+          forecastHorizon <- fcastLength()
+          
+          weather <- gatherWeatherData(timeRange = time, station1 = zipStations$id[1], station2 = zipStations$id[2])
+          print(str_c("UID: ", uid))
+          if((!is.null(uid)) && ((!is.null(weather$tMax1) && !is.null(weather$tMin1)) || (!is.null(weather$tMax2) && !is.null(weather$tMin2)))){
+            print("plotting")
+            output$userPredPlot <- renderPlotly({
+              dd_plot(tMax1 = weather$tMax1, 
+                      tMax2 = weather$tMax2, 
+                      tMin1 = weather$tMin1, 
+                      tMin2 = weather$tMin2, 
+                      mean(dfPresent$BDT.C[uid]),
+                      mean(dfPresent$EADDC[uid]),
+                      time[1],
+                      time[2],
+                      species = unique(dfPresent$Species[uid]),
+                      breaks="1 month",
+                      dateformat="%m/%y",
+                      locality = str_c(zipLocation$City, ", ", zipLocation$State),
+                      gen_gap = gGap,
+                      forecast_length = forecastHorizon)})
+            print("Plot rendered")
+            toastr_success("Zip code found", timeOut = 10000)
+            toastr_success("Plot rendered successfully", timeOut = 10000)
+            toastr_info("Click 'View plot!' to view/save rendered plot", timeOut = 20000)
           }
-        else {
-          toastr_error("Insufficient inputs for plotting")
-          output$zipAdvice <- renderPrint("Either there is no current RNOAA (weather) data available at this zip code, or you have not selected a species from the last page.")}
-      }else{
+          else {
+            toastr_error("Insufficient inputs for plotting")
+            output$zipAdvice <- renderPrint("Either there is no current RNOAA (weather) data available at this zip code, or you have not selected a species from the last page.")}
+        }else{
         output$zipAdvice <- renderPrint("Zip code not found. Please try a different zip code.")
         toastr_error("Zip code not found")}})
   
@@ -1483,6 +1538,14 @@ server <- function(input, output, session){
                      label = NULL, 
                      value = 1,
                      min = 1),
+        tags$b("Number of days to predict: "),
+        helpText("A polynomial regression model is fit to degree day data to predict future development. You can change the number of days to predict into the future (up to 60)"),
+        numericInput(inputId = "fcastLength", 
+                     label = NULL,
+                     value = 30,
+                     min = 1,
+                     max = 60),
+        div("days"),
         tags$head(
           tags$style(HTML('#goButton{background-color:#5fdba7}'))
         ),
