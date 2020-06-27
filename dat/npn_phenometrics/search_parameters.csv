@@ -1,0 +1,13 @@
+Parameter,Setting
+Data Type:,Site Phenometrics
+Start Date:,1950-01-01
+End Date:,2020-06-26
+Data Precision Filter:,30
+States:,
+Species:,"cabbage white (Pieris rapae), convergent lady beetle (Hippodamia convergens), oleander aphid (Aphis nerii)"
+Phenophase Categories:,"Activity, Reproduction, Development"
+Output Fields:,Phenophase Category
+Quality Flags:,ignored
+Partner Groups:,
+Integrated Datasets:,
+Stations:,

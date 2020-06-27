@@ -48,6 +48,9 @@ max_heatmap_updates_per_session = 1
 #library(testit)
 #DO NOT FORGET TO ADD RESET FOR EVERY YEAR (first day reset to 0).
 
+npn_data <- read.csv("./dat/npn_phenometrics/site_phenometrics_data.csv")
+npn_data <- replace(npn_data, npn_data == -9999, NA)
+
 get_dfWrangled <- function(){
   #Import seasonality database
   AppendixS3_SeasonalityDatabase <- read.csv("./dat/AppendixS3_SeasonalityDatabase.csv", header=TRUE)
@@ -434,7 +437,12 @@ safeSci2Com <- function(df) {
 #       - cum_DD: a rasterLayer containing cumulative Degree Day values on the start date
 #                 (Degree days will begin accumulating from here, otherwise they start at 0)
 #       - species: a string species name that will be queried to get mean BDT and EADDC values from ./dat/AppendixS3_SeasonalityDatabase.csv
-accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01')), end_date = Sys.Date() -2, BDT = NULL, EADDC = NULL, cum_DD = NULL, species = NULL){
+accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01')),
+                         end_date = Sys.Date() -2, 
+                         BDT = NULL, 
+                         EADDC = NULL, 
+                         cum_DD = NULL, 
+                         species = NULL){
   #Define area of interest 
   print(cum_DD)
   if(!is.null(cum_DD)){
@@ -699,9 +707,11 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
       if(!(format(last_update, '%Y') == thisYear) && (Sys.Date() -2 >= as.Date(str_c(thisYear, "-01-01")))){
         print(str_c("Creating a new phenology record for ", name, " in ", thisYear))
         #toastr_info("Please be patient, a new degree day map is being created for this year.")
+        dir.create('./dat/tmp')
         accumulateDD(as.Date(str_c(thisYear, "-01-01")), 
                      Sys.Date() - 2, 
                      species = name)
+        unlink("./dat/tmp", recursive=TRUE)
         #max_updates <- max_updates -1
         updates_remaining <- updates_remaining -1
         
@@ -1175,11 +1185,12 @@ server <- function(input, output, session){
     df <- lat_long_df()
     map <- leaflet(data = df) %>%
       addProviderTiles(providers$CartoDB.Positron) %>% 
-      addLayersControl(#baseGroups = c("Heatmap"),
-                       overlayGroups = c("Observations"),
-                       options = layersControlOptions(collapsed = FALSE, 
-                                                      autoZIndex = TRUE)) %>% 
+      # addLayersControl(#baseGroups = c("Heatmap"),
+      #                  overlayGroups = c("Observations"), #"Pieris rapae phenophases"),
+      #                  options = layersControlOptions(collapsed = FALSE, 
+      #                                                 autoZIndex = TRUE)) %>% 
       hideGroup("Observations") %>% 
+      hideGroup("Pieris rapae phenophases") %>% 
       addCircleMarkers(lng = ~lon,
                        lat = ~lat,
                        radius = 2.5,
@@ -1343,13 +1354,88 @@ server <- function(input, output, session){
       }
       return(map)}
     
+    if("Pieris rapae" == names(availablePhenoSpecies)[availablePhenoSpecies == input$phenoSpecies]){
+      map <- showGroup(map, "Pieris rapae phenophases") %>% 
+        addLayersControl(#baseGroups = c("Heatmap"),
+          overlayGroups = c("Observations", "Pieris rapae phenophases"),
+          options = layersControlOptions(collapsed = FALSE, 
+                                         autoZIndex = TRUE))} 
+    else{map <- addLayersControl(map,#baseGroups = c("Heatmap"),
+      overlayGroups = c("Observations"), #"Pieris rapae phenophases"),
+      options = layersControlOptions(collapsed = FALSE, 
+                                     autoZIndex = TRUE))}
+    #else {map <- hideGroup(map, "Pieris rapae phenophases")}
+    
     #Add the species raster to the map (calls addRasterImage based on selected species and computes current day if chosen)
     map <- addSpeciesRaster(speciesPhenStack = raster::brick(input$phenoSpecies), 
                             EADDC = speciesEADDC_Dict[[input$phenoSpecies]],
                             BDT = speciesBDT_Dict[[input$phenoSpecies]])
     
+    # pal_it <- colorBin(c('transparent', '#4376c7', '#59711b', '#ffc324', '#ff7729'), 
+    #                 c(0, EADDC), 
+    #                 bins = c(0, round(0.25 * EADDC), round(0.5 * EADDC), round(0.75 * EADDC), floor(EADDC), ceiling(EADDC)),
+    #                 na.color = "transparent",
+    #                 domain = df$type)
     
+    # relavant_date <- function(start_day, end_day){
+    #   rel <- as.numeric(strftime(dateR, format = "%j"))
+    #   print(rel)
+    #   
+    #   if (!is_null(start_day) && !is.null(end_day)){
+    #     if ((rel < (start_day - 30)) || (rel > (end_day + 30))){
+    #       print(str_c("start: ", start_day))
+    #       print(str_c("start: ", end_day))
+    #       print("--------------------")
+    #       return(FALSE)}
+    #     else{print(start_day)
+    #       return(TRUE)}
+    #   } else if (!is_null(start_day)){
+    #     if(rel < (start_day - 30) || rel > (start_day + 30) ){return(FALSE)}
+    #     else{return(TRUE)}
+    #   } else if (!is_null(end_day)){
+    #     if(rel < (end_day - 30) || rel > (end_day + 30) ){return(FALSE)}
+    #     else{return(TRUE)}
+    #   } else {return(FALSE)}
+    # }
     
+    # npn_data_current <- npn_data %>% 
+    #   dplyr::filter(relavant_date(start_day = Mean_First_Yes_DOY, end_day = Mean_Last_Yes_DOY))
+    
+    npn_species <- npn_data[which(npn_data$Species == "rapae"), ]
+    
+    rel <- as.numeric(strftime(dateR, format = "%j"))
+    #print(rel)
+    relavant_obs <- npn_data[which(rel > npn_data$Mean_First_Yes_DOY - 30), ]
+    npn_data_current <- relavant_obs[which(rel < relavant_obs$Mean_Last_Yes_DOY + 30), ]
+    
+    pal_it <- colorFactor(
+      palette = c('#ff7729', '#4376c7', '#8e44ad'),
+      domain = c("Development", "Activity", "Reproduction")
+    )
+    
+    map <- addCircleMarkers(map, 
+                            lng = npn_data_current$Longitude,
+                            lat = npn_data_current$Latitude,
+                            radius = 10,
+                            group = "Pieris rapae phenophases", 
+                            color = pal_it(npn_data_current$Phenophase_Category),
+                            popup = paste("<b>",npn_data_current$Common_Name, "</b>", "<br>",
+                                          "<em>",npn_data_current$Genus, " ", npn_data_current$Species, "</em>", "<br>",
+                                          "<b> First Date Observed: </b>", as.Date(npn_data_current$Mean_First_Yes_Julian_Date, origin = structure(-2440588, class = "Date")), 
+                                          "(", npn_data_current$First_Yes_Sample_Size, " obs )", "<br>",
+                                          "<b> Last Date Observed: </b>", as.Date(npn_data_current$Mean_Last_Yes_Julian_Date, origin = structure(-2440588, class = "Date")), 
+                                          "(", npn_data_current$Last_Yes_Sample_Size, " obs )", "<br>",
+                                          "<b> Phenophase Catagory: </b>", npn_data_current$Phenophase_Category, "<br>",
+                                          "<b> Phenophase Description: </b>", npn_data_current$Phenophase_Description))
+    # (lng = ~lon,
+    #   lat = ~lat,
+    #   radius = 2.5,
+    #   group = "Observations",
+    #   layerId = ~uid,
+    #   popup = paste("<em>",df$Species,"</em>", "<br>",
+    #                 #sci2comm(df$Species)[[1]][1], "<br>",
+    #                 "<b> G: </b>", round(df$EADDC, digits=2), "<br>",
+    #                 "<b> T<sub>0</sub>: </b>", round(df$BDT.C, digits=2)))
     map
   })
   
