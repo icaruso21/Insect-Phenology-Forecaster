@@ -1,2 +1,3 @@
-# Insect-Phenology-Forecaster [![Build Status](https://travis-ci.org/icaruso21/Insect-Phenology-Forecaster.svg?branch=master)](https://travis-ci.org/icaruso21/Insect-Phenology-Forecaster)
-An R-Shiny based insect phenology forecaster using Leaflet mapping and weather data from the RNOAA library.
+# Insect-Phenology-Forecaster 
+An R-Shiny based spring insect phenology forecaster visualizing current insect development in the US with the help of Leaflet and Plotly and daily weather data sourced from the [Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (using [RNOAA](https://github.com/ropensci/rnoaa)) and [gridMET](http://www.climatologylab.org/gridmet.html) (using [climateR](https://github.com/mikejohnson51/climateR). This weather data was interpreted using thermal parameters from [this dataset](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper), and the [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd). 
+
