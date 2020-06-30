@@ -1,4 +1,7 @@
 #Just importing packages from CRAN
+# install.packages(c("shiny", "leaflet", "mosaic", "rnoaa", "shinyWidgets", "lubridate", "taxize", "raster", "rasterVis",
+#                    "tidyverse", "hash", "shinycssloaders", "rgdal", "shinytoastr", "shinyalert", "plotly", "shinyglide",
+#                    "cicerone"))
 library(shiny)
 library(leaflet)
 library(mosaic)
@@ -21,8 +24,8 @@ library(cicerone)
 #library(caret)
 
 #if (!require('devtools')) install.packages('devtools')
-#devtools::install_github("mikejohnson51/AOI")
-#devtools::install_github("mikejohnson51/climateR")
+#install_github(c("ColinFay/glouton", "mikejohnson51/AOI", "mikejohnson51/climateR", "carlganz/shinyCleave", "dreamRs/shinypop", "JohnCoene/shinyscroll"))
+#devtools::install_github("ColinFay/glouton")
 #devtools::install_github("carlganz/shinyCleave")
 #devtools::install_github("dreamRs/shinypop")
 #devtools::install_github("JohnCoene/shinyscroll")
@@ -844,12 +847,14 @@ guide <- Cicerone$
 
 #-----It's the user interface! (What the user sees)-------
 ui <- fluidPage(
+  title = "Insect Phenology",
   useToastr(),
   useShinyalert(),
   use_glouton(),
   use_cicerone(),
   use_shinyscroll(),
   tags$script(js),
+  tags$head(tags$link(rel="shortcut icon", href="https://insect-phenology.s3.us-east-2.amazonaws.com/favicon.ico")),
   tags$head(tags$style(".modal-dialog{ width:80%}")),
   verticalLayout(
     h1("Spring Insect Phenology"),
