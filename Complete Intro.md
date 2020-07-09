@@ -12,7 +12,7 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 
 
 
- - *Phenopause heatmap*- A colorized map displaying insect development across the United States for the selected species. The accumulated degree days to which the colors correspond are scaled based on each species' G (displayed in the map legend).
+ - *Phenophase heatmap*- A colorized map displaying insect development across the United States for the selected species. The accumulated degree days to which the colors correspond are scaled based on each species' G (displayed in the map legend).
 	 - User controls:
 		 - *Select a species*: Change the species visualized on the heatmap
 		 - *Change heatmap date*: Change the heatmap viewing date (From first day of this year to two days ago)
@@ -37,7 +37,7 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
     
 -   **T<sub>upper**</sub> (°C) - The upper developmental threshold is the upper temperature above which an organism will not be able to develop. In practice, this value is likely greater than any temperature the species will encounter during spring development in the United States. Therefore, in this visualization the simplifying assumption that organisms will not actually encounter this temperature was made.
     
--   **method** - The approximation technique used to calculate temperature throughout day. The single.sine method assumes the temperature curve is normally distributed around the maximum temperature.
+-   **method** - The approximation technique used to calculate temperature throughout the day. The single.sine method assumes the temperature curve is normally distributed around the maximum temperature.
     
 
 The threshold amount of degree days that must be accumulated for an insect egg to reach adulthood is defined as the **growing degree days required** (G).
@@ -46,5 +46,5 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTQyOTI4NjgxMiw3NzIzODY5MTBdfQ==
+eyJoaXN0b3J5IjpbLTg2NzEzNTgwMCw3NzIzODY5MTBdfQ==
 -->
