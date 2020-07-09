@@ -6,7 +6,7 @@ Temperature is an especially influential factor in the lives of  **ectotherms**,
 
 Insect life cycles provide the basis for our understanding of the developmental process of countless species. Here is a typical insect life cycle:   
 <p  align="center"><img title="http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg"
-src="http://www.co.stevens.wa.us/weedboard/htm_bio/lifecycle%20diagram.jpg" 
+src="https://shiny-insect-forecaster.s3-us-west-2.amazonaws.com/insectlifecycle.jpg" 
 height="400"
 class="center"></p>
 <!--stackedit_data:
