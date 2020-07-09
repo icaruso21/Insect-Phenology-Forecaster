@@ -28,7 +28,7 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 *Note concerning pieris rapae heatmap:* The [USA National Phenology Network](https://www.usanpn.org/usa-national-phenology-network) Nature's Notebook Program features [observational data](https://www.usanpn.org/data/observational) of many plant and insect populations' pheology. The NPN database, features  *P. rapae* as an insect species with many historical phenophase obervations around the USA. Observations within 30 days of the current layer date are presented for *P. rapae* as an additional (optional) layer of colored, clickable markers, and displayed when *P. rapae* is selected for visualization on the heatmap.
  
 ### Data sources and methods:
-**Insect Data:** Originally from , sourced from the [github repository](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper) provided by [Buckley et al. 2017](https://academic.oup.com/icb/article/57/5/988/3896235)
+**Insect Data:** Sourced from [Jarosík et al. 2011]()   sourced from the [github repository](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper) provided by [Buckley et al. 2017](https://academic.oup.com/icb/article/57/5/988/3896235)
 **Weather data:** We use current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)), which features weather data with a 4km spatial resolution .
 **Degree day calculation:** We use a function for calculating degree days available from the TrenchR package.  The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (T_min) and maxima (T_max) to calculate the GDDs accumulated in a 24 hour period:
 
@@ -45,7 +45,7 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MjIyODAxNTMsOTM1ODc0NDYyLDMzOD
+eyJoaXN0b3J5IjpbLTE1NTk5NjUwOTAsOTM1ODc0NDYyLDMzOD
 g4ODc5OSwtMTA0OTIwMjg1LC04NjcxMzU4MDAsNzcyMzg2OTEw
 XX0=
 -->
