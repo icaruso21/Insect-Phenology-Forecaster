@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your key and signing method.</Message><AWSAccessKeyId>AKIA3HKOJXPFQNGIOO4Q</AWSAccessKeyId><StringToSign>AWS4-HMAC-SHA256
+20200708T202159Z
+20200708/us-west-2/s3/aws4_request
+ea43d83ecfa4fdda3b01a95e0e90e63abc303ce3b56c10023b2a06fd1efcd5e6</StringToSign><SignatureProvided>8abbe7605f90c69539585667ca676711f41d403ec826f6f602bd234b4b10511b</SignatureProvided><StringToSignBytes>41 57 53 34 2d 48 4d 41 43 2d 53 48 41 32 35 36 0a 32 30 32 30 30 37 30 38 54 32 30 32 31 35 39 5a 0a 32 30 32 30 30 37 30 38 2f 75 73 2d 77 65 73 74 2d 32 2f 73 33 2f 61 77 73 34 5f 72 65 71 75 65 73 74 0a 65 61 34 33 64 38 33 65 63 66 61 34 66 64 64 61 33 62 30 31 61 39 35 65 30 65 39 30 65 36 33 61 62 63 33 30 33 63 65 33 62 35 36 63 31 30 30 32 33 62 32 61 30 36 66 64 31 65 66 63 64 35 65 36</StringToSignBytes><CanonicalRequest>GET
+/shiny-insect-forecaster/dat/Acyrthosiphon.kondoi.gri
+
+host:s3-us-west-2.amazonaws.com
+x-amz-date:20200708T202159Z
+
+host;x-amz-date
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</CanonicalRequest><CanonicalRequestBytes>47 45 54 0a 2f 73 68 69 6e 79 2d 69 6e 73 65 63 74 2d 66 6f 72 65 63 61 73 74 65 72 2f 64 61 74 2f 41 63 79 72 74 68 6f 73 69 70 68 6f 6e 2e 6b 6f 6e 64 6f 69 2e 67 72 69 0a 0a 68 6f 73 74 3a 73 33 2d 75 73 2d 77 65 73 74 2d 32 2e 61 6d 61 7a 6f 6e 61 77 73 2e 63 6f 6d 0a 78 2d 61 6d 7a 2d 64 61 74 65 3a 32 30 32 30 30 37 30 38 54 32 30 32 31 35 39 5a 0a 0a 68 6f 73 74 3b 78 2d 61 6d 7a 2d 64 61 74 65 0a 65 33 62 30 63 34 34 32 39 38 66 63 31 63 31 34 39 61 66 62 66 34 63 38 39 39 36 66 62 39 32 34 32 37 61 65 34 31 65 34 36 34 39 62 39 33 34 63 61 34 39 35 39 39 31 62 37 38 35 32 62 38 35 35</CanonicalRequestBytes><RequestId>959E3E024D7D33C7</RequestId><HostId>W+VdvmZyFB38aH40R8FwneNgX+ykX4ZW28+fof8zLRSaxHsLp2+7+I1TmtOLP1MWk49Y4VXijUc=</HostId></Error>

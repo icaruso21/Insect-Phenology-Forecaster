@@ -21,6 +21,7 @@ library(shinyalert)
 library(plotly)
 library(shinyglide)
 library(cicerone)
+library(aws.s3)
 #library(caret)
 
 #if (!require('devtools')) install.packages('devtools')
@@ -42,10 +43,17 @@ js <- "$(document).on('shiny:connected', function(event) {
 });"
 
 ##Change this if you want the heatmap to not automatically update
-autoUpdateHeatmap = TRUE
+autoUpdateHeatmap = FALSE
 
 ##How many species heatmaps can be updated when a user begins a session
 max_heatmap_updates_per_session = 1
+
+s3_data <- "shiny-insect-forecaster"
+aws.s3::s3sync(path = "./dat",
+               bucket = s3_data,
+               prefix = "dat/",
+               direction = "download")
+
 
 #library(rgdal)
 #library(testit)
@@ -625,12 +633,13 @@ accumulateDDPart <- function(start_date, end_date = Sys.Date() -2, BDT, EADDC, c
     p = getGridMET(AOI, param = c('tmax','tmin'), startDate = start_date)
     r = raster::stack(p)
     names(r) = c('tmin', 'tmax')
-    
+
     pastStack <- NULL
     #print('1')
+    
     cum_DD <- overlay(r, fun = function(x){degree.days.mat(mosaic::value(x[1]) -273.15, mosaic::value(x[2]) -273.15, BDT)})
     p <- NULL
-    r <- NULL
+    r <- NULL 
   }
   print("Initial raster layer: ")
   print(cum_DD)
@@ -745,7 +754,7 @@ updatePhenology <- function(availableSpecies = read_rds("./dat/availablePhenoSpe
 
 
 
-#if(autoUpdateHeatmap) updatePhenology()
+if(autoUpdateHeatmap) updatePhenology()
 
 # pll <- function(){
 #   run_r_process(updatePhenology())
@@ -764,7 +773,7 @@ guide <- Cicerone$
   )$
   step(
     "mymap",
-    "The Phenopause Heatmap",
+    "The Phenophase Heatmap",
     "The colored layer on the map represents current insect development in the US. 
     For more information on how we modeled this check out the introduction above. Now, let's continue to see what the layer is actually displaying."
   )$
@@ -854,7 +863,7 @@ ui <- fluidPage(
   use_cicerone(),
   use_shinyscroll(),
   tags$script(js),
-  tags$head(tags$link(rel="shortcut icon", href="https://insect-phenology.s3.us-east-2.amazonaws.com/favicon.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://shiny-insect-forecaster.s3-us-west-2.amazonaws.com/favicon.ico")),
   tags$head(tags$style(".modal-dialog{ width:80%}")),
   verticalLayout(
     h1("Spring Insect Phenology"),
@@ -862,12 +871,14 @@ ui <- fluidPage(
     div(
       id="scroll-button-wrapper",
       align="left",
+      tags$em(tags$b("Skip to Map")),
       p("If you're not one for an introduction, feel free to skip to the visualization tool."),
       actionBttn("scroll", "Insect Phenology Visualization", size = "sm", style = "fill", color = "primary")),
     div(
       id = "plotting-assistant-wrapper",
       hr(),
-      p("New Tool! Our new phenology plotting feature allows you to interactively produce a current/historical spring phenology plot for an insect species of your choice using weather data automatically collected in your favorite US zipcode."),
+      tags$em(tags$b("New Plotting Tool! ")),
+      p("Our new phenology plotting feature allows you to interactively produce a current/historical development plot for an insect species of your choice using weather data from any US zipcode."),
       actionBttn("miniPlotter", "Phenology Plotting Tool", size = "sm", style = "fill", color = "primary"),
       p(""),
       hr()),
@@ -1295,6 +1306,7 @@ server <- function(input, output, session){
           # Sys.sleep(20)
           # print(proceed_with_caution)
           # 
+        
           # if(!is.null(proceed_with_caution)){
           #   if(proceed_with_caution){
               toastr_warning("Computing image...", timeOut = 20000)
@@ -1306,7 +1318,7 @@ server <- function(input, output, session){
               if(Sys.Date() -2 < dateR){dateR <- Sys.Date() -2} 
               toView <- accumulateDDPart(tempDate, dateR, BDT = BDT, EADDC = EADDC, cum_DD = toAccum)
               print(str_c("Update toView:", toView))
-              raster::plot(toView)
+              #raster::plot(toView)
               map <- addRasterImage(map, toView, colors = pal, group = "Heatmap", opacity = 0.6) %>% 
                 addLegend(pal = pal,
                           values = c(0, EADDC),
@@ -1424,14 +1436,14 @@ server <- function(input, output, session){
                             radius = 10,
                             group = "Pieris rapae phenophases", 
                             color = pal_it(npn_data_current$Phenophase_Category),
-                            popup = paste("<b>",npn_data_current$Common_Name, "</b>", "<br>",
-                                          "<em>",npn_data_current$Genus, " ", npn_data_current$Species, "</em>", "<br>",
+                            popup = #paste("<b>","Cabbage white butterfly", "</b>", 
+                                          paste("<em>", npn_data_current$Genus, " ", npn_data_current$Species, "</em>", "<br>",
+                                          "<b> Phenophase Catagory: </b>", npn_data_current$Phenophase_Category, "<br>",
+                                          "<b> Phenophase Description: </b>", npn_data_current$Phenophase_Description, "<br>",
                                           "<b> First Date Observed: </b>", as.Date(npn_data_current$Mean_First_Yes_Julian_Date, origin = structure(-2440588, class = "Date")), 
                                           "(", npn_data_current$First_Yes_Sample_Size, " obs )", "<br>",
                                           "<b> Last Date Observed: </b>", as.Date(npn_data_current$Mean_Last_Yes_Julian_Date, origin = structure(-2440588, class = "Date")), 
-                                          "(", npn_data_current$Last_Yes_Sample_Size, " obs )", "<br>",
-                                          "<b> Phenophase Catagory: </b>", npn_data_current$Phenophase_Category, "<br>",
-                                          "<b> Phenophase Description: </b>", npn_data_current$Phenophase_Description))
+                                          "(", npn_data_current$Last_Yes_Sample_Size, " obs )"))
     # (lng = ~lon,
     #   lat = ~lat,
     #   radius = 2.5,
