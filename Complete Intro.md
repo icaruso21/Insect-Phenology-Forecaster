@@ -25,7 +25,7 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 
 *Note concerning observation plots:* The simplifying assumption that offspring are immediately produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals G, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. A custom generational lag can be specified below the plot. This is not the case for the phenophase heatmap, which displays phenology for one generation each year.
 
-*Note concerning pieris rapae heatmap:* The [USA National Phenology Network]()
+*Note concerning pieris rapae heatmap:* The [USA National Phenology Network](https://www.usanpn.org/usa-national-phenology-network) Nature's Notebook Program provides [observational data]()
  
 ### Data sources and methods:
 **Insect Dataset:** [Cite source of data]
@@ -46,6 +46,6 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTE0MTczODc0MTIsLTEwNDkyMDI4NSwtOD
-Y3MTM1ODAwLDc3MjM4NjkxMF19
+eyJoaXN0b3J5IjpbLTIzNTgyNTAyNywtMTA0OTIwMjg1LC04Nj
+cxMzU4MDAsNzcyMzg2OTEwXX0=
 -->
