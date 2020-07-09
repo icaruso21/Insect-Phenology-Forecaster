@@ -24,16 +24,14 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 *Note concerning observation plots:* The simplifying assumption that offspring are immediately produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals G, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. A custom generational lag can be specified below the plot. This is not the case for the phenopause heatmap, which displays phenology for one generation each year.
 
 ### Data sources and methods:
-
 **Dataset:** [Cite source of data]
-
 **Degree day calculation:** We use a function for calculating degree days available from the TrenchR package.  The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (T_min) and maxima (T_max) to calculate the GDDs accumulated in a 24 hour period:
 
     TrenchR::degree_days(T_min, T_max, T_0 = NA, T_upper = NA, method = "single.sine")
 
--   T0 (°C) - The lower developmental threshold is the minimum temperature required for development to occur, above which an organism is likely to progress forward in development.
+-   **T<sub>0</sub> (°C) - The lower developmental threshold is the minimum temperature required for development to occur, above which an organism is likely to progress forward in development.
     
--   Tupper (°C) - The upper developmental threshold is the upper temperature above which an organism will not be able to develop. In practice, this value is likely greater than any temperature the species will encounter during spring development in the United States. Therefore, in this visualization the simplifying assumption that organisms will not actually encounter this temperature was made.
+-   **T<sub>upper**</sub> (°C) - The upper developmental threshold is the upper temperature above which an organism will not be able to develop. In practice, this value is likely greater than any temperature the species will encounter during spring development in the United States. Therefore, in this visualization the simplifying assumption that organisms will not actually encounter this temperature was made.
     
 -   method - The approximation technique used to calculate temperature throughout day. The single.sine method assumes the temperature curve is normally distributed around the maximum temperature.
     
@@ -42,5 +40,5 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 Weather data: We use current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)).
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTE1NjA4MzY0Nyw3NzIzODY5MTBdfQ==
+eyJoaXN0b3J5IjpbLTE1NjI1NDk4NjcsNzcyMzg2OTEwXX0=
 -->
