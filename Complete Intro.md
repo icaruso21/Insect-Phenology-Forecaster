@@ -25,6 +25,8 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 
 *Note concerning observation plots:* The simplifying assumption that offspring are immediately produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals G, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. A custom generational lag can be specified below the plot. This is not the case for the phenophase heatmap, which displays phenology for one generation each year.
 
+*Note concerning pieris rapae heatmap:* The [USA National Phenology Network]()
+ 
 ### Data sources and methods:
 **Insect Dataset:** [Cite source of data]
 **Degree day calculation:** We use a function for calculating degree days available from the TrenchR package.  The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (T_min) and maxima (T_max) to calculate the GDDs accumulated in a 24 hour period:
@@ -44,6 +46,6 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNTc5ODMyOTE3LC0xMDQ5MjAyODUsLTg2Nz
-EzNTgwMCw3NzIzODY5MTBdfQ==
+eyJoaXN0b3J5IjpbLTE0MTczODc0MTIsLTEwNDkyMDI4NSwtOD
+Y3MTM1ODAwLDc3MjM4NjkxMF19
 -->
