@@ -6,7 +6,7 @@ The activity and life cycle of insects is highly dependent on temperature. Many 
 
 ## Simple diagram or interactive plot seems desirable here.
 
-Development rates can be reasonably approximated by how many heat units an insect accumulates. The rate of development each day is determined by the number of degrees by which temperatures exceed T0, which is referred to as **degree days**. The insect reaches adulthood once it acquires a sufficient number of degree day heat units, which is referred to as the **growing degree days required** (G, °C).
+Development rates can be reasonably approximated by how many heat units an insect accumulates. The rate of development each day is determined by the number of degrees by which temperatures exceed T<sub>0</sub>, which is referred to as **degree days**. The insect reaches adulthood once it acquires a sufficient number of degree day heat units, which is referred to as the **growing degree days required** (G, °C).
 
 Developmental traits (T<sub>0</sub> and G) have been estimated for many insect populations by raising them in laboratories at a range of temperatures. Here we use a compilation of development traits for XXXX populations of XXXX species to predict phenological timing. We provide two ways of exploring insect phenology:
 
@@ -46,6 +46,6 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTQ0Mzk3MjAyNCwtODY3MTM1ODAwLDc3Mj
+eyJoaXN0b3J5IjpbLTEwNDkyMDI4NSwtODY3MTM1ODAwLDc3Mj
 M4NjkxMF19
 -->
