@@ -6,34 +6,22 @@ The activity and life cycle of insects is highly dependent on temperature. Many 
 
 Developmental traits (T<sub>0</sub> and G) have been estimated for many insect populations by raising them in laboratories at a range of temperatures. Here we use a compilation of development traits for XXXX populations of XXXX species to predict phenological timing. We provide two ways of exploring insect phenology:
 
-Phenopause heatmap- A colorized map displaying insect development across the United States for the selected species. The accumulated degree days to which the colors correspond are scaled based on each species' G (displayed in the map legend).
 
--   User controls:
-    
 
--   Select a species: Change the species visualized on the heatmap
-    
--   Change heatmap date: Change the heatmap viewing date (From first day of this year to two days ago)
-    
--   Heatmap resolution: Change the level of accuracy of the heatmap
-    
+ - *Phenopause heatmap*- A colorized map displaying insect development across the United States for the selected species. The accumulated degree days to which the colors correspond are scaled based on each species' G (displayed in the map legend).
+	 - User controls:
+		 - *Select a species*: Change the species visualized on the heatmap
+		 - *Change heatmap date*: Change the heatmap viewing date (From first day of this year to two days ago)
+		 - *Heatmap resolution*: Change the level of accuracy of the heatmap
+			 - *Week* (default): Display's previously calculated heatmap for the week that contains the selected date.
+			 - *Day of Week*: Can take several minutes to compute date specific cumulative degree days across the United States. **Use with caution!** 
+ - *Observations* - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances. When an observation is selected, a plot of accumulated degree days for the current date range will be displayed. 
+	 - User controls:
+		 - *Select species*: Select (or deselect) species' whose observations will be displayed
+		 - *Date range*: The period of time to plot accumulated degree days for, starting from 0 at the start date. (Default: first day of this year to yesterday)
 
--   Week (default): Display's previously calculated heatmap for the week that contains the selected date.
-    
--   Day of Week: Can take several minutes to compute date specific cumulative degree days across the United States. Use with caution!
-    
 
-Observations - An optional map layer of circle markers displaying where various insect species' were observed to determine thermal tolerances. When an observation is selected, a plot of accumulated degree days for the current date range will be displayed.
-
--   User controls:
-    
-
--   Select species: Select (or deselect) species' whose observations will be displayed
-    
--   Date range: The period of time to plot accumulated degree days for, starting from 0 at the start date. (Default: first day of this year to yesterday)
-    
-
-Note concerning observation plots: The simplifying assumption that offspring are immediately produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals G, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. A custom generational lag can be specified below the plot. This is not the case for the phenopause heatmap, which displays phenology for one generation each year.
+*Note concerning observation plots:* The simplifying assumption that offspring are immediately produced upon the emergence of new adults was made, allowing for multiple generations per year. When accumulated degree days equals G, one generation reaches adulthood and the accumulated degree days are reset to 0. This marks the beginning of a new generation. A custom generational lag can be specified below the plot. This is not the case for the phenopause heatmap, which displays phenology for one generation each year.
 
 Data sources and methods:
 
@@ -54,5 +42,5 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 Weather data: We use current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)).
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbNzcyMzg2OTEwXX0=
+eyJoaXN0b3J5IjpbLTEzMjkxNzAwODQsNzcyMzg2OTEwXX0=
 -->
