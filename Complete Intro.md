@@ -30,7 +30,8 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 ### Data sources and methods:
 **Insect Data:** Sourced from [Jarosík et al. 2011](https://pubmed.ncbi.nlm.nih.gov/22299347/),  available on [GitHub](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper)
 
-**Weather data:** We use current and historical weather data sourced from [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)), which features weather data with a 4km spatial resolution .
+**Weather data:** We use current and historical weather data sourced from the nearest available station [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)), which features daily, gridded weather data at 4km spatial resolution.
+
 **Degree day calculation:** We use a function for calculating degree days available from the TrenchR package.  The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (T_min) and maxima (T_max) to calculate the GDDs accumulated in a 24 hour period:
 
     TrenchR::degree_days(T_min, T_max, T_0 = NA, T_upper = NA, method = "single.sine")
@@ -46,7 +47,7 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbODE2OTk0NjM3LDkzNTg3NDQ2MiwzMzg4OD
+eyJoaXN0b3J5IjpbNzIwNDcwNzY1LDkzNTg3NDQ2MiwzMzg4OD
 g3OTksLTEwNDkyMDI4NSwtODY3MTM1ODAwLDc3MjM4NjkxMF19
 
 -->
