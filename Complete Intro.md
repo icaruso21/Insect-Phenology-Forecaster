@@ -30,7 +30,7 @@ Developmental traits (T<sub>0</sub> and G) have been estimated for many insect p
 ### Data sources and methods:
 **Insect Data:** Sourced from [Jarosík et al. 2011](https://pubmed.ncbi.nlm.nih.gov/22299347/),  available on [GitHub](https://github.com/lbuckley/ICBseasonality/tree/master/CodeForICBPaper)
 
-**Weather data:** We use daily current and historical weather data sourced from the two weather stations nearest to within [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)), which features daily, gridded weather data at 4km spatial resolution.
+**Weather data:** We use daily weather data sourced from the two weather stations nearest to an observaton within [NOAA's Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcnd-data-access) (R Package: [RNOAA](https://docs.ropensci.org/rnoaa/)) to create development plots and [The Climatology Lab's gridMET dataset](http://www.climatologylab.org/gridmet.html) (R Package: [climateR](https://github.com/mikejohnson51/climateR)), which features daily, gridded weather data at 4km spatial resolution to create phenology heatmaps.
 
 **Degree day calculation:** We use a function for calculating degree days available from the TrenchR package.  The [TrenchR](https://github.com/trenchproject/TrenchR) package's [degree day function](https://github.com/trenchproject/TrenchR/blob/master/man/degree_days.Rd) combines species-specific baseline developmental temperatures with daily temperature minima (T_min) and maxima (T_max) to calculate the GDDs accumulated in a 24 hour period:
 
@@ -47,7 +47,7 @@ The threshold amount of degree days that must be accumulated for an insect egg t
 
 ## on weather data: Worth indicating the temporal resolution and resolution of grid cells and that you find the closest weather station.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTM0MDg4NDM5MCw5MzU4NzQ0NjIsMzM4OD
+eyJoaXN0b3J5IjpbMjEyMzc0MTQ0NSw5MzU4NzQ0NjIsMzM4OD
 g4Nzk5LC0xMDQ5MjAyODUsLTg2NzEzNTgwMCw3NzIzODY5MTBd
 fQ==
 -->
