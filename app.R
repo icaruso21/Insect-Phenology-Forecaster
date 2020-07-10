@@ -885,6 +885,7 @@ ui <- fluidPage(
     includeMarkdown('intro3.md'),
     #hr(),
     includeMarkdown('intro.md'),
+    plotlyOutput("demoPlot"),
     includeMarkdown('intro2.md'),
     #headerPanel('Insect Phenology Visualization'),
     div(
@@ -1648,7 +1649,6 @@ server <- function(input, output, session){
                      value = 30,
                      min = 1,
                      max = 60),
-        div("days"),
         tags$head(
           tags$style(HTML('#goButton{background-color:#5fdba7}'))
         ),
@@ -1666,6 +1666,26 @@ server <- function(input, output, session){
   
   observeEvent(input$miniPlotter, {
   showModal(glide_modal)})
+  
+  demo_weather <- read_rds("./dat/demo-weather.csv")
+  
+  output$demoPlot <- renderPlotly({
+    dd_plot(tMax1 = demo_weather$tMax1, 
+            tMax2 = demo_weather$tMax2, 
+            tMin1 = demo_weather$tMin1, 
+            tMin2 = demo_weather$tMin2, 
+            10, 
+            319.7, 
+            as.Date("2019-10-01"),
+            as.Date("2020-07-09"),
+            species = "Pieris rapae",
+            lat = 47.629091,
+            lon = -117.40636,
+            breaks="1 month",
+            dateformat="%m/%y",
+            gen_gap = 1,
+            forecast_length = 0)})
+  
 }
 
 #--------- Here, the shiny app is being executed--------
