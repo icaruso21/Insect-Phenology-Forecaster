@@ -48,11 +48,11 @@ autoUpdateHeatmap = FALSE
 ##How many species heatmaps can be updated when a user begins a session
 max_heatmap_updates_per_session = 1
 
-s3_data <- "shiny-insect-forecaster"
-aws.s3::s3sync(path = "./dat",
-               bucket = s3_data,
-               prefix = "dat/",
-               direction = "download")
+#s3_data <- "shiny-insect-forecaster"
+#aws.s3::s3sync(path = "./dat",
+#               bucket = s3_data,
+#               prefix = "dat/",
+#               direction = "download")
 
 
 #library(rgdal)
