@@ -1,6 +1,6 @@
 #Sys.setenv(BASH_ENV="~/.bashrc")
 #Sys.getenv()
-setwd("/home/rstudio/Insect-Phenology-Forecaster")
+setwd("/srv/shinyapps/Insect-Phenology-Forecaster")
 library(tidyverse)
 library(mosaic)
 library(leaflet)
