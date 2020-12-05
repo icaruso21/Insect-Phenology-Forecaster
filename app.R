@@ -1026,7 +1026,7 @@ server <- function(input, output, session){
         confirmButtonCol = "#AEDEF4",
         cancelButtonText = "No Thanks!",
         timer = 0,
-        imageUrl = "https://img.icons8.com/plasticine/100/000000/insect.png",
+        imageUrl = "https://img.icons8.com/offices/30/000000/insect.png",
         imageWidth = 100,
         imageHeight = 100,
         animation = TRUE, 
