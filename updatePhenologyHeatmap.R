@@ -1,6 +1,6 @@
 #Sys.setenv(BASH_ENV="~/.bashrc")
 #Sys.getenv()
-setwd("/srv/shinyapps/Insect-Phenology-Forecaster")
+setwd("/code")
 library(tidyverse)
 library(mosaic)
 library(leaflet)
