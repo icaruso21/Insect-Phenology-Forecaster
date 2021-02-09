@@ -269,9 +269,15 @@ updatePhenology <- function(availableSpecies = readr::read_rds("./dat/availableP
     name <- names(availableSpecies)[[i]]
     filePath <- availableSpecies[[i]]
     print("----------Grabbing File-------------------")
-    toUpdate <- raster::brick(availableSpecies[[i]])
+    
+      toUpdate <- try(raster::brick(availableSpecies[[i]]))
+      if(inherits(toUpdate, "try-error")){
+    #error handling code, maybe just skip this iteration using
+        last_update <- as.Date("2020-12-30")
+      } else{last_update <- as.Date(str_replace_all(sub('.', '', last(names(toUpdate))), "[/.]", "-"))}
+  
+    
     print("-------------File Found-------------------")
-    last_update <- as.Date(str_replace_all(sub('.', '', last(names(toUpdate))), "[/.]", "-"))
     currentDay <- Sys.Date() -2
     #Calculate file age (in days) after fetching the last date it was modified
     #last_update <- as.Date(file.info(availableSpecies[[i]])$mtime)
