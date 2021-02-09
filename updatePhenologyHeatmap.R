@@ -192,7 +192,7 @@ accumulateDD <- function(start_date = as.Date(str_c(year(Sys.Date()), '-01-01'))
     #Add cumulative DD values to current_date DD values (current_DD)
     cum_DD <- cum_DD + current_DD
     #Reset cum_DD values greater than EADDC to 0
-    cum_DD <- overlay(cum_DD, tolerance = 0.1, fun = function(cumul){
+    cum_DD <- overlay(cum_DD, fun = function(cumul){
       if (!is.na(cumul[1]) && (cumul[1] >= EADDC)){
         return(as.vector(EADDC))} 
       else {
