@@ -268,7 +268,9 @@ updatePhenology <- function(availableSpecies = readr::read_rds("./dat/availableP
     # print(max_updates)
     name <- names(availableSpecies)[[i]]
     filePath <- availableSpecies[[i]]
+    print("----------Grabbing File-------------------")
     toUpdate <- raster::brick(availableSpecies[[i]])
+    print("-------------File Found-------------------")
     last_update <- as.Date(str_replace_all(sub('.', '', last(names(toUpdate))), "[/.]", "-"))
     currentDay <- Sys.Date() -2
     #Calculate file age (in days) after fetching the last date it was modified
