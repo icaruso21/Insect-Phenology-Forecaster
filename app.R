@@ -863,7 +863,7 @@ ui <- fluidPage(
   use_cicerone(),
   use_shinyscroll(),
   tags$script(js),
-  tags$head(tags$link(rel="shortcut icon", href="https://shiny-insect-forecaster.s3-us-west-2.amazonaws.com/favicon.ico")),
+  tags$head(tags$link(rel="shortcut icon", href="https://insect-phenology-photos.s3-us-west-2.amazonaws.com/insect.ico")),
   tags$head(tags$style(".modal-dialog{ width:80%}")),
   verticalLayout(
     h1("Spring Insect Phenology"),
@@ -1026,7 +1026,7 @@ server <- function(input, output, session){
         confirmButtonCol = "#AEDEF4",
         cancelButtonText = "No Thanks!",
         timer = 0,
-        imageUrl = "https://img.icons8.com/offices/100/000000/insect.png",
+        imageUrl = "https://insect-phenology-photos.s3-us-west-2.amazonaws.com/insect.png",
         imageWidth = 100,
         imageHeight = 100,
         animation = TRUE, 
