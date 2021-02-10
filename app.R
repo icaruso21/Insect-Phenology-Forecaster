@@ -1616,7 +1616,7 @@ server <- function(input, output, session){
           Also, we will need to know the egg to adult degree days \u00B0C (G) value, which determines how many degree days an insect egg must accumulate before reaching 'adulthood'."),
         p("You may search for your favorite insect species in our database: "),
         DT::dataTableOutput('speciesSearch'),
-        helpText("To select: Click on one or multiple observations in the table for use in plotting (if multiple are selected T<sub>0</sub> and G values are averaged)"),
+        helpText("To select: Click on one or multiple observations in the table for use in plotting (if multiple are selected T0 and G values are averaged)"),
         verbatimTextOutput('speciesSearchResults'),
         p("Now, click continue to pick a location...")
         #next_condition = "!is.empty(input.speciesSearch_rows_selected)"
