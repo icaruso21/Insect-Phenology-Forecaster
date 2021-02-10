@@ -1,7 +1,7 @@
 
 <img 
 title="http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid.htm"
-src="http://entnemdept.ufl.edu/creatures/veg/aphid/melon_aphid01.jpg" 
+src="https://insect-phenology-photos.s3-us-west-2.amazonaws.com/gossypii.jpg" 
 height="200"
 class="center"
 align="right">
